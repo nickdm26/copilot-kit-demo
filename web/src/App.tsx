@@ -8,6 +8,7 @@ import { GenUi } from "./components/genui";
 import { ConnectedAgentStatusStrip } from "./components/agent/ConnectedAgentStatusStrip";
 import { ClientProfilePanel } from "./components/client/ClientProfilePanel";
 import { ConnectedSuggestionChips } from "./components/agent/ConnectedSuggestionChips";
+import { ConnectedModelPicker } from "./components/agent/ConnectedModelPicker";
 
 const selectClass = "bg-surface text-ink border border-border rounded-[var(--radius)] px-3 py-1 font-body text-sm";
 
@@ -26,20 +27,9 @@ function Shell() {
       <header className="flex items-center gap-4 px-4 py-3 border-b border-border">
         <h1 className="font-heading text-2xl uppercase tracking-wide mr-auto">PT Coach</h1>
         <label className="flex items-center gap-2 text-sm text-ink-muted">
-          Model
-          <select
-            data-testid={TEST_IDS.modelSelect}
-            className={selectClass}
-            value={modelKey}
-            onChange={(e) => setModelKey(e.target.value)}
-          >
-            {models.map((m) => (
-              <option key={m.key} value={m.key}>
-                {modelDisplayName(m)}
-              </option>
-            ))}
-          </select>
-        </label>
+                Model
+                <ConnectedModelPicker />
+              </label>
               <label className="flex items-center gap-2 text-sm text-ink-muted">
                 Client
                 <select
