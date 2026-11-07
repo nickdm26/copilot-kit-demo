@@ -162,10 +162,11 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 | `getClient` | .NET backend | `{ clientId }` | `Client` JSON, or an error string for an unknown id | none | |
 | `searchExercises` | .NET backend | `{ query?, pattern?, muscle?, equipment?, maxShoulderStress? }`, filters AND-ed, `query` matches name/id case-insensitively | `Exercise[]`, at most 10 | none | |
 | `updateProgram` | .NET backend, result mapped to `STATE_SNAPSHOT` (fallback: frontend tool) | `{ clientId?, goal?, daysPerWeek?, days?: [{ week, day, focus, exercises }], removeDays?: [{ week, day }], flags? }` | the full `ProgramState` | program grid | `useAgent` (fallback: `useFrontendTool`) |
-| `showExerciseCard` | frontend render | `{ exerciseId, sets, reps, rpe, week?, day?, note? }` | n/a | `ExerciseCard` | `useComponent` or `useRenderTool` |
-| `showWeekSummary` | frontend render | `{ week, note? }` | n/a | `WeekSummary` | `useRenderTool` |
+| `showExerciseCard` | frontend render | `{ exerciseId, sets, reps, rpe, week?, day?, note? }` | n/a | `ExerciseCard` | `useFrontendTool` (`followUp: false`, render) |
+| `showWeekSummary` | frontend render | `{ week, note? }` | n/a | `WeekSummary` | `useFrontendTool` (`followUp: false`, render) |
 | `proposeSwap` | frontend human in the loop | `{ fromExerciseId, toExerciseId, reason, week?, day? }` (no week and no day means every occurrence) | `{ approved, fromExerciseId, toExerciseId }` via `respond()` | `SwapApproval` | `useHumanInTheLoop` |
 
+- Why `useFrontendTool` for the two render tools: in CopilotKit 1.85.0 `useRenderTool` never sends the tool definition to the model, and `useComponent` gives its render no status (so no streaming skeleton).
 - `ExerciseCard` looks up name, cues and `shoulderStress` from the seed library by `exerciseId`. The agent never sends cue text.
 - `WeekSummary` computes sets per muscle for `week` from the current program state: each set counts **1.0** for the primary muscle and **0.5** for each other muscle. A muscle with sets > 0 is "too little" below **4** and "too much" above **16** (`VOLUME_WEIGHTS`, `VOLUME_RANGE`).
 - Tool names are camelCase exactly as above, on every side. C# constants: `ToolNames.*`. TS constants: `TOOLS.*`.
