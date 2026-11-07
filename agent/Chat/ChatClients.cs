@@ -3,6 +3,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using PtCoach.Agent.Models;
+using PtCoach.Agent.Telemetry;
 
 namespace PtCoach.Agent.Chat;
 
@@ -43,7 +44,8 @@ public sealed class OpenRouterChatClientFactory(
     IOptions<OpenRouterOptions> openRouter,
     IOptions<ReplayOptions> replay,
     ModelsOptions models,
-    ILoggerFactory loggerFactory) : IChatClientFactory
+    ILoggerFactory loggerFactory,
+    IOptions<TelemetryOptions> telemetry) : IChatClientFactory
 {
     public const string TelemetrySource = "Experimental.Microsoft.Extensions.AI";
 
@@ -57,7 +59,8 @@ public sealed class OpenRouterChatClientFactory(
             // No network call and no key needed.
             return ReplayChatClient.Load(r.Path, TimeSpan.FromMilliseconds(r.TextDelayMs), TimeSpan.FromMilliseconds(r.CallDelayMs))
                 .AsBuilder()
-                .UseOpenTelemetry(loggerFactory, TelemetrySource)
+                .UseOpenTelemetry(loggerFactory, TelemetrySource, c => c.EnableSensitiveData = telemetry.Value.CaptureContent)
+                .Use((inner, _) => new TelemetryEnrichingChatClient(inner))
                 .Build();
         }
 
@@ -84,7 +87,8 @@ public sealed class OpenRouterChatClientFactory(
 
         return chat
             .AsBuilder()
-            .UseOpenTelemetry(loggerFactory, TelemetrySource)
+            .UseOpenTelemetry(loggerFactory, TelemetrySource, c => c.EnableSensitiveData = telemetry.Value.CaptureContent)
+            .Use((inner, _) => new TelemetryEnrichingChatClient(inner))
             .Build();
     }
 }
