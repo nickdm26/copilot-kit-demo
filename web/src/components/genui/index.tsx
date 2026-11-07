@@ -62,7 +62,11 @@ export function GenUi(): null {
     parameters: ShowExerciseCardArgsSchema,
     followUp: false,
     handler: async () => "shown",
-    render: ({ args, status }) => <ExerciseCard args={args} state={status === "inProgress" ? "streaming" : "done"} />,
+    // A finished call with no exercise id (some models send empty args) has nothing to show.
+    render: ({ args, status }) =>
+      status !== "inProgress" && !args.exerciseId ? null : (
+        <ExerciseCard args={args} state={status === "inProgress" ? "streaming" : "done"} />
+      ),
   });
 
   useFrontendTool({
