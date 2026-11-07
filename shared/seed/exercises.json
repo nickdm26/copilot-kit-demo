@@ -1,0 +1,548 @@
+[
+  {
+    "id": "back-squat",
+    "name": "Back squat",
+    "pattern": "squat",
+    "muscles": ["quads", "glutes"],
+    "equipment": ["barbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Brace hard and keep the bar over mid-foot",
+      "Sit between the hips and drive knees out",
+      "Stop at the depth you can control"
+    ]
+  },
+  {
+    "id": "goblet-squat",
+    "name": "Goblet squat",
+    "pattern": "squat",
+    "muscles": ["quads", "glutes"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Hold the weight close to your chest",
+      "Keep chest tall and elbows inside the knees",
+      "Sit down between the feet, heels flat"
+    ]
+  },
+  {
+    "id": "leg-press",
+    "name": "Leg press",
+    "pattern": "squat",
+    "muscles": ["quads", "glutes"],
+    "equipment": ["machine"],
+    "shoulderStress": "low",
+    "cues": [
+      "Feet shoulder width, mid-height on the platform",
+      "Lower until the hips start to tuck",
+      "Don't lock out hard at the top"
+    ]
+  },
+  {
+    "id": "bodyweight-squat",
+    "name": "Bodyweight squat",
+    "pattern": "squat",
+    "muscles": ["quads", "glutes"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "low",
+    "cues": [
+      "Feet about shoulder width, toes slightly out",
+      "Reach hips back and down",
+      "Pause at the bottom, then stand tall"
+    ]
+  },
+  {
+    "id": "split-squat",
+    "name": "Split squat",
+    "pattern": "lunge",
+    "muscles": ["quads", "glutes"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Long stride, back foot light on the floor",
+      "Drop the back knee straight down",
+      "Keep torso upright and front heel down"
+    ]
+  },
+  {
+    "id": "reverse-lunge",
+    "name": "Reverse lunge",
+    "pattern": "lunge",
+    "muscles": ["quads", "glutes"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "low",
+    "cues": [
+      "Step back and lower the back knee toward the floor",
+      "Front shin stays close to vertical",
+      "Push through the front heel to stand"
+    ]
+  },
+  {
+    "id": "trap-bar-deadlift",
+    "name": "Trap bar deadlift",
+    "pattern": "hinge",
+    "muscles": ["glutes", "hamstrings", "back"],
+    "equipment": ["trap-bar"],
+    "shoulderStress": "low",
+    "cues": [
+      "Stand in the centre and grip the handles",
+      "Push the floor away with chest up",
+      "Lock out with glutes, don't lean back"
+    ]
+  },
+  {
+    "id": "romanian-deadlift",
+    "name": "Romanian deadlift",
+    "pattern": "hinge",
+    "muscles": ["hamstrings", "glutes", "back"],
+    "equipment": ["barbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Soft knees, push the hips back",
+      "Bar stays close to the legs the whole way",
+      "Stop at mid-shin or when the back starts to round"
+    ]
+  },
+  {
+    "id": "dumbbell-romanian-deadlift",
+    "name": "Dumbbell Romanian deadlift",
+    "pattern": "hinge",
+    "muscles": ["hamstrings", "glutes"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Hold dumbbells in front of the thighs",
+      "Hinge at the hips and keep the spine neutral",
+      "Feel the stretch in the hamstrings"
+    ]
+  },
+  {
+    "id": "hip-thrust",
+    "name": "Hip thrust",
+    "pattern": "hinge",
+    "muscles": ["glutes", "hamstrings"],
+    "equipment": ["barbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Upper back on the bench, bar over the hips",
+      "Drive through the heels and squeeze at the top",
+      "Chin tucked and ribs down"
+    ]
+  },
+  {
+    "id": "glute-bridge",
+    "name": "Glute bridge",
+    "pattern": "hinge",
+    "muscles": ["glutes", "hamstrings"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "low",
+    "cues": [
+      "Feet flat, knees bent, heels close to hips",
+      "Drive hips up and squeeze the glutes",
+      "Lower with control and don't arch the back"
+    ]
+  },
+  {
+    "id": "kettlebell-swing",
+    "name": "Kettlebell swing",
+    "pattern": "hinge",
+    "muscles": ["glutes", "hamstrings"],
+    "equipment": ["kettlebell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Hinge and snap the hips forward",
+      "Arms are ropes, the power comes from the hips",
+      "Keep the back flat and the bell at chest height"
+    ]
+  },
+  {
+    "id": "bench-press",
+    "name": "Barbell bench press",
+    "pattern": "horizontal-push",
+    "muscles": ["chest", "triceps", "shoulders"],
+    "equipment": ["barbell"],
+    "shoulderStress": "medium",
+    "cues": [
+      "Retract and depress the shoulder blades",
+      "Lower the bar to mid-chest with forearms vertical",
+      "Keep elbows about 45 degrees from the torso"
+    ]
+  },
+  {
+    "id": "dumbbell-floor-press",
+    "name": "Dumbbell floor press",
+    "pattern": "horizontal-push",
+    "muscles": ["chest", "triceps"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Lie on the floor, elbows touch it at the bottom",
+      "Press up with control and wrists stacked",
+      "Keep elbows tucked, not flared"
+    ]
+  },
+  {
+    "id": "push-up",
+    "name": "Push-up",
+    "pattern": "horizontal-push",
+    "muscles": ["chest", "triceps", "shoulders"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "medium",
+    "cues": [
+      "Hands just outside the shoulders, body in a line",
+      "Lower the chest to just above the floor",
+      "Push the floor away with elbows at about 45 degrees"
+    ]
+  },
+  {
+    "id": "dips",
+    "name": "Dip",
+    "pattern": "horizontal-push",
+    "muscles": ["chest", "triceps"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "high",
+    "cues": [
+      "Lean slightly forward to load the chest",
+      "Lower until upper arms are about parallel to the floor",
+      "Stop short if the front of the shoulder pinches"
+    ]
+  },
+  {
+    "id": "overhead-press",
+    "name": "Barbell overhead press",
+    "pattern": "vertical-push",
+    "muscles": ["shoulders", "triceps"],
+    "equipment": ["barbell"],
+    "shoulderStress": "high",
+    "cues": [
+      "Bar starts at the collarbone, grip just outside the shoulders",
+      "Squeeze glutes and press straight over mid-foot",
+      "Move the head back, then through at lockout"
+    ]
+  },
+  {
+    "id": "dumbbell-shoulder-press",
+    "name": "Dumbbell shoulder press",
+    "pattern": "vertical-push",
+    "muscles": ["shoulders", "triceps"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "medium",
+    "cues": [
+      "Seated or standing with ribs down",
+      "Press in a slight arc with biceps by the ears",
+      "Lower to shoulder height with control"
+    ]
+  },
+  {
+    "id": "landmine-press",
+    "name": "Landmine press",
+    "pattern": "vertical-push",
+    "muscles": ["shoulders", "chest"],
+    "equipment": ["barbell"],
+    "shoulderStress": "medium",
+    "cues": [
+      "Split stance, bar end in hand at the shoulder",
+      "Press up and forward along the bar's arc",
+      "Keep the core tight and don't shrug"
+    ]
+  },
+  {
+    "id": "pike-push-up",
+    "name": "Pike push-up",
+    "pattern": "vertical-push",
+    "muscles": ["shoulders", "triceps"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "high",
+    "cues": [
+      "Hips high, hands wider than the shoulders",
+      "Lower the top of the head toward the floor",
+      "Press back up with elbows pointing back"
+    ]
+  },
+  {
+    "id": "barbell-row",
+    "name": "Barbell row",
+    "pattern": "horizontal-pull",
+    "muscles": ["back", "biceps"],
+    "equipment": ["barbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Hinge to about 45 degrees with the back flat",
+      "Pull the bar to the lower ribs, elbows back",
+      "Control the bar down, don't yank it"
+    ]
+  },
+  {
+    "id": "chest-supported-row",
+    "name": "Chest-supported row",
+    "pattern": "horizontal-pull",
+    "muscles": ["back", "biceps"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Chest on an incline bench, arms hanging",
+      "Pull elbows toward the hips and squeeze the shoulder blades",
+      "Pause briefly at the top"
+    ]
+  },
+  {
+    "id": "one-arm-dumbbell-row",
+    "name": "One-arm dumbbell row",
+    "pattern": "horizontal-pull",
+    "muscles": ["back", "biceps"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Knee and hand on the bench, back flat",
+      "Drive the elbow up past the torso",
+      "Lower fully for a complete stretch"
+    ]
+  },
+  {
+    "id": "seated-cable-row",
+    "name": "Seated cable row",
+    "pattern": "horizontal-pull",
+    "muscles": ["back", "biceps"],
+    "equipment": ["cable"],
+    "shoulderStress": "low",
+    "cues": [
+      "Sit tall with a slight lean and no rocking",
+      "Pull the handle to the belly button",
+      "Let the shoulder blades move forward at full stretch"
+    ]
+  },
+  {
+    "id": "inverted-row",
+    "name": "Inverted row",
+    "pattern": "horizontal-pull",
+    "muscles": ["back", "biceps"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "low",
+    "cues": [
+      "Body straight from heels to head",
+      "Pull the chest toward the bar",
+      "Lower until the arms are straight"
+    ]
+  },
+  {
+    "id": "face-pull",
+    "name": "Face pull",
+    "pattern": "horizontal-pull",
+    "muscles": ["shoulders", "back"],
+    "equipment": ["cable"],
+    "shoulderStress": "low",
+    "cues": [
+      "Rope at upper-chest height",
+      "Pull toward the forehead with elbows high and out",
+      "Rotate the hands out at the end of each rep"
+    ]
+  },
+  {
+    "id": "band-pull-apart",
+    "name": "Band pull-apart",
+    "pattern": "horizontal-pull",
+    "muscles": ["back", "shoulders"],
+    "equipment": ["band"],
+    "shoulderStress": "low",
+    "cues": [
+      "Arms straight at shoulder height",
+      "Pull the band apart toward the chest",
+      "Keep wrists neutral and shoulders down"
+    ]
+  },
+  {
+    "id": "lat-pulldown",
+    "name": "Lat pulldown",
+    "pattern": "vertical-pull",
+    "muscles": ["back", "biceps"],
+    "equipment": ["cable"],
+    "shoulderStress": "low",
+    "cues": [
+      "Grip just wider than the shoulders",
+      "Pull the bar to the upper chest with chest tall",
+      "Control the bar back up to a full stretch"
+    ]
+  },
+  {
+    "id": "pull-up",
+    "name": "Pull-up",
+    "pattern": "vertical-pull",
+    "muscles": ["back", "biceps"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "medium",
+    "cues": [
+      "Hang with full arm extension",
+      "Pull the chest toward the bar, elbows down",
+      "Lower slowly to a dead hang"
+    ]
+  },
+  {
+    "id": "kipping-pull-up",
+    "name": "Kipping pull-up",
+    "pattern": "vertical-pull",
+    "muscles": ["back", "biceps"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "high",
+    "cues": [
+      "Use a controlled hip swing to start",
+      "Pull hard and push the bar down at the end",
+      "Stop if the shoulder pinches"
+    ]
+  },
+  {
+    "id": "behind-the-neck-pulldown",
+    "name": "Behind-the-neck pulldown",
+    "pattern": "vertical-pull",
+    "muscles": ["back", "shoulders"],
+    "equipment": ["cable"],
+    "shoulderStress": "high",
+    "cues": [
+      "Wide grip, pull the bar behind the neck",
+      "Upright torso and a small range of motion",
+      "Skip it if the shoulder is sore overhead"
+    ]
+  },
+  {
+    "id": "upright-row",
+    "name": "Upright row",
+    "pattern": "vertical-pull",
+    "muscles": ["shoulders", "back"],
+    "equipment": ["barbell"],
+    "shoulderStress": "high",
+    "cues": [
+      "Grip narrower than the shoulders",
+      "Lead with the elbows, bar close to the body",
+      "Stop at chest height if the shoulders pinch"
+    ]
+  },
+  {
+    "id": "farmer-carry",
+    "name": "Farmer carry",
+    "pattern": "carry",
+    "muscles": ["back", "core"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Tall posture with shoulders down and back",
+      "Short, quick steps and no swinging weights",
+      "Squeeze the handles hard the whole time"
+    ]
+  },
+  {
+    "id": "plank",
+    "name": "Plank",
+    "pattern": "core",
+    "muscles": ["core"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "low",
+    "cues": [
+      "Elbows under the shoulders, body in a line",
+      "Squeeze the glutes and brace the stomach",
+      "Breathe steadily and don't let the hips sag"
+    ]
+  },
+  {
+    "id": "dead-bug",
+    "name": "Dead bug",
+    "pattern": "core",
+    "muscles": ["core"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "low",
+    "cues": [
+      "Keep the lower back pressed into the floor",
+      "Extend the opposite arm and leg slowly",
+      "Exhale as you extend"
+    ]
+  },
+  {
+    "id": "pallof-press",
+    "name": "Pallof press",
+    "pattern": "core",
+    "muscles": ["core"],
+    "equipment": ["cable"],
+    "shoulderStress": "low",
+    "cues": [
+      "Stand side-on to the cable and hold at the chest",
+      "Press out and resist the twist",
+      "Hold for two seconds, then return"
+    ]
+  },
+  {
+    "id": "dumbbell-curl",
+    "name": "Dumbbell curl",
+    "pattern": "isolation",
+    "muscles": ["biceps"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "low",
+    "cues": [
+      "Elbows pinned at your sides",
+      "Curl up without swinging the torso",
+      "Lower slowly for about three seconds"
+    ]
+  },
+  {
+    "id": "triceps-pushdown",
+    "name": "Triceps pushdown",
+    "pattern": "isolation",
+    "muscles": ["triceps"],
+    "equipment": ["cable"],
+    "shoulderStress": "low",
+    "cues": [
+      "Elbows tucked and fixed in place",
+      "Extend fully and squeeze at the bottom",
+      "Let the forearms return under control"
+    ]
+  },
+  {
+    "id": "lateral-raise",
+    "name": "Dumbbell lateral raise",
+    "pattern": "isolation",
+    "muscles": ["shoulders"],
+    "equipment": ["dumbbell"],
+    "shoulderStress": "medium",
+    "cues": [
+      "Slight bend in the elbows, lead with the elbows",
+      "Raise to shoulder height and no higher",
+      "Lower slowly and don't let the weights drop"
+    ]
+  },
+  {
+    "id": "leg-extension",
+    "name": "Leg extension",
+    "pattern": "isolation",
+    "muscles": ["quads"],
+    "equipment": ["machine"],
+    "shoulderStress": "low",
+    "cues": [
+      "Line the knee up with the machine's pivot",
+      "Extend fully and pause at the top",
+      "Lower with control and no bouncing"
+    ]
+  },
+  {
+    "id": "leg-curl",
+    "name": "Seated leg curl",
+    "pattern": "isolation",
+    "muscles": ["hamstrings"],
+    "equipment": ["machine"],
+    "shoulderStress": "low",
+    "cues": [
+      "Pad sits just above the heel",
+      "Curl the heels toward the glutes",
+      "Return slowly and don't let the stack slam"
+    ]
+  },
+  {
+    "id": "calf-raise",
+    "name": "Standing calf raise",
+    "pattern": "isolation",
+    "muscles": ["calves"],
+    "equipment": ["bodyweight"],
+    "shoulderStress": "low",
+    "cues": [
+      "Rise onto the balls of the feet",
+      "Pause at the top and squeeze the calf",
+      "Lower into a full stretch"
+    ]
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "sarah",
+    "name": "Sarah Lindqvist",
+    "age": 34,
+    "goal": "strength",
+    "experience": "intermediate",
+    "daysPerWeek": 3,
+    "equipment": ["barbell", "dumbbell", "kettlebell", "cable", "machine", "bodyweight", "trap-bar"],
+    "injuries": [
+      {
+        "area": "shoulder",
+        "side": "left",
+        "severity": "mild",
+        "note": "Sore when pressing overhead. Pain-free below shoulder height."
+      }
+    ],
+    "notes": "Trains in a barbell gym. Left shoulder gets sore under overhead load, so pressing stays at low or medium stress until she clears it."
+  },
+  {
+    "id": "tom",
+    "name": "Tom Reilly",
+    "age": 41,
+    "goal": "general",
+    "experience": "beginner",
+    "daysPerWeek": 3,
+    "equipment": ["dumbbell", "bodyweight", "band"],
+    "injuries": [],
+    "notes": "New to lifting and training at home with dumbbells and bands. Wants general fitness and to feel confident with the basic lifts. Keep loads light and technique simple."
+  },
+  {
+    "id": "priya",
+    "name": "Priya Raman",
+    "age": 29,
+    "goal": "endurance-support",
+    "experience": "intermediate",
+    "daysPerWeek": 3,
+    "equipment": ["barbell", "dumbbell", "kettlebell", "cable", "machine", "bodyweight", "trap-bar"],
+    "injuries": [],
+    "notes": "Marathon runner building a gym block for strength and durability. Keep leg work moderate in the two days before long runs."
+  }
+]

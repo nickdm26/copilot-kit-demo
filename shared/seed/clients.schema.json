@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PT Coach seed clients",
+  "description": "shared/seed/clients.json. Mirrors ClientSchema and InjurySchema in web/src/lib/contracts.ts.",
+  "type": "array",
+  "minItems": 3,
+  "maxItems": 3,
+  "uniqueItems": true,
+  "items": { "$ref": "#/$defs/Client" },
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "Equipment": {
+      "enum": [
+        "barbell",
+        "dumbbell",
+        "kettlebell",
+        "cable",
+        "machine",
+        "bodyweight",
+        "band",
+        "trap-bar"
+      ]
+    },
+    "Injury": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["area", "severity", "note"],
+      "properties": {
+        "area": {
+          "enum": ["shoulder", "knee", "lower-back", "hip", "ankle", "elbow", "wrist"]
+        },
+        "side": { "enum": ["left", "right", "both"] },
+        "severity": { "enum": ["mild", "moderate"] },
+        "note": { "type": "string", "maxLength": 140 }
+      }
+    },
+    "Client": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "age",
+        "goal",
+        "experience",
+        "daysPerWeek",
+        "equipment",
+        "injuries",
+        "notes"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "age": { "type": "integer", "minimum": 16, "maximum": 90 },
+        "goal": { "enum": ["strength", "hypertrophy", "general", "endurance-support"] },
+        "experience": { "enum": ["beginner", "intermediate", "advanced"] },
+        "daysPerWeek": { "type": "integer", "minimum": 1, "maximum": 6 },
+        "equipment": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/Equipment" }
+        },
+        "injuries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Injury" }
+        },
+        "notes": { "type": "string", "maxLength": 280 }
+      }
+    }
+  }
+}
