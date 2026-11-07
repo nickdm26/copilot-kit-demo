@@ -184,6 +184,14 @@
   border-radius: 14px 14px 4px 14px;
 }
 
+/*
+  Past 50 messages CopilotKit virtualizes the list and sizes any row that measures 0px as 100px. Tool results and
+  tool-call-only assistant turns render nothing, so each became a 100px blank. A 1px floor keeps them measurable.
+*/
+:root [data-copilotkit] [data-testid="copilot-message-list"] [data-index] {
+  min-height: 1px;
+}
+
 @layer utilities {
   .tabular {
     font-variant-numeric: tabular-nums;
