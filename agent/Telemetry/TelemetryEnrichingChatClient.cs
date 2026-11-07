@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Microsoft.Extensions.AI;
 using PtCoach.Agent.Models;
@@ -12,34 +14,33 @@ namespace PtCoach.Agent.Telemetry;
 /// </summary>
 public sealed class TelemetryEnrichingChatClient(IChatClient inner) : DelegatingChatClient(inner)
 {
-    private readonly HashSet<string> _proposeSwapCallIds = [];
+    // One client serves every run for its model, so runs can touch this set at the same time.
+    private readonly ConcurrentDictionary<string, byte> _proposeSwapCallIds = new();
 
     public override async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
-        CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // Scan incoming messages for proposeSwap results from previous turns.
         foreach (var msg in messages)
         {
             foreach (var content in msg.Contents)
             {
-                if (content is FunctionResultContent frc && _proposeSwapCallIds.Contains(frc.CallId))
+                if (content is FunctionResultContent frc && _proposeSwapCallIds.ContainsKey(frc.CallId))
                 {
                     RecordApprovalDecision(frc);
                 }
             }
         }
 
-        var updates = new List<ChatResponseUpdate>();
         await foreach (var update in base.GetStreamingResponseAsync(messages, options, cancellationToken))
         {
-            updates.Add(update);
             foreach (var content in update.Contents)
             {
                 if (content is FunctionCallContent fcc && fcc.Name == ToolNames.ProposeSwap)
                 {
-                    _proposeSwapCallIds.Add(fcc.CallId);
+                    _proposeSwapCallIds.TryAdd(fcc.CallId, 0);
                     RecordApprovalProposed(fcc);
                 }
                 else if (content is FunctionCallContent fcc2 && fcc2.Name == ToolNames.UpdateProgram)
@@ -67,14 +68,14 @@ public sealed class TelemetryEnrichingChatClient(IChatClient inner) : Delegating
                 {
                     if (content is FunctionCallContent fcc && fcc.Name == ToolNames.ProposeSwap)
                     {
-                        _proposeSwapCallIds.Add(fcc.CallId);
+                        _proposeSwapCallIds.TryAdd(fcc.CallId, 0);
                         RecordApprovalProposed(fcc);
                     }
                     else if (content is FunctionCallContent fcc2 && fcc2.Name == ToolNames.UpdateProgram)
                     {
                         RecordUpdateProgramCall(fcc2);
                     }
-                    else if (content is FunctionResultContent frc && _proposeSwapCallIds.Contains(frc.CallId))
+                    else if (content is FunctionResultContent frc && _proposeSwapCallIds.ContainsKey(frc.CallId))
                     {
                         RecordApprovalDecision(frc);
                     }
@@ -114,7 +115,10 @@ public sealed class TelemetryEnrichingChatClient(IChatClient inner) : Delegating
         string status;
         if (result.Result is JsonElement je)
         {
-            status = je.TryGetProperty("approved", out var approved) && approved.GetBoolean()
+            // Never throw from telemetry: the result may not be an object, or "approved" may not be a boolean.
+            status = je.ValueKind == JsonValueKind.Object
+                && je.TryGetProperty("approved", out var approved)
+                && approved.ValueKind == JsonValueKind.True
                 ? "approved" : "rejected";
         }
         else if (result.Result is string s)

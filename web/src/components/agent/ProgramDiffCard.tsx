@@ -1,3 +1,4 @@
+import { TEST_IDS } from "../../lib/contracts";
 import { Badge, Button, Card, Chip, cx } from "../ui";
 
 export interface DiffRow {
@@ -39,8 +40,8 @@ export function ProgramDiffCard({
         "my-2 flex flex-col gap-3",
         status === "pending" && "border-accent",
       )}
-      data-testid="program-diff-card"
-      data-status={status}
+      data-testid={TEST_IDS.programDiffCard}
+      data-state={status}
     >
       {/* Header */}
       <div className="flex items-center gap-2">

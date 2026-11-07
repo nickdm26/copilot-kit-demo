@@ -165,9 +165,12 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 | `showExerciseCard` | frontend render | `{ exerciseId, sets, reps, rpe, week?, day?, note? }` | n/a | `ExerciseCard` | `useFrontendTool` (`followUp: false`, render) |
 | `showWeekSummary` | frontend render | `{ week, note? }` | n/a | `WeekSummary` | `useFrontendTool` (`followUp: true`, render: the agent keeps building after each week) |
 | `proposeSwap` | frontend human in the loop | `{ fromExerciseId, toExerciseId, reason, week?, day? }` (no week and no day means every occurrence) | `{ approved, fromExerciseId, toExerciseId }` via `respond()` | `SwapApproval` | `useHumanInTheLoop` |
+| `showProgressCard` | frontend render | `{ lift, points: [{ week, kg }], topSet, est1rm, goal?, trend: { tone: "ok"\|"flag", label } }` | n/a | `ProgressCard` | `useFrontendTool` (`followUp: false`, render) |
+| `proposeChanges` | frontend human in the loop | `{ week, rows: [{ cell, before, after }], reason? }` (1 to 20 rows; `cell` like `"Day 3 · A1"`) | `{ approved }` via `respond()` | `ProgramDiffCard` | `useHumanInTheLoop` |
 | `showHowTo` | .NET backend, rendered by the web app | `{ ui }`: a tree of catalog nodes (`Card`, `Heading`, `Stepper`, `PoseFigure`, `TempoStrip`, `Callout`); schema in `web/src/components/declarative/schema.ts` | `"Shown to the trainer in the chat."`, or an `Error:` string for a tree that breaks the rules | `HowToCard` | `useRenderTool` |
 
-- Why `useFrontendTool` for the two render tools: in CopilotKit 1.85.0 `useRenderTool` never sends the tool definition to the model, and `useComponent` gives its render no status (so no streaming skeleton).
+- `showProgressCard` and `proposeChanges` were added in Tasks 2, 3 and 8 of `PT_COACH_BUILD_PLAN.md`. `proposeChanges` only asks; it changes nothing. On approve the agent writes the rows with `updateProgram`.
+- Why `useFrontendTool` for the render tools: in CopilotKit 1.85.0 `useRenderTool` never sends the tool definition to the model, and `useComponent` gives its render no status (so no streaming skeleton).
 - `ExerciseCard` looks up name, cues and `shoulderStress` from the seed library by `exerciseId`. The agent never sends cue text.
 - `WeekSummary` computes sets per muscle for `week` from the current program state: each set counts **1.0** for the primary muscle and **0.5** for each other muscle. A muscle with sets > 0 is "too little" below **4** and "too much" above **16** (`VOLUME_WEIGHTS`, `VOLUME_RANGE`).
 - `showHowTo` (declarative generative UI, added in Task 9): the agent sends JSON only, never HTML, CSS or code. The web app validates `ui` with zod (`validateHowTo`: strict props, at most 4 levels deep, at most 50 nodes, at most one `Stepper`) and renders nothing that fails. `ShowHowToTool.cs` checks the same rules so the model gets an error to fix. `useRenderTool` is right here because the tool is a backend tool: its definition reaches the model from .NET.
@@ -184,7 +187,8 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 5. On approve: `updateProgram` with the swapped exercise in every affected day, and remove that flag. On reject: keep the original and the flag, and say in one sentence why it was flagged.
 6. After writing a week, call `showWeekSummary` for it. Use `showExerciseCard` when the trainer asks about a lift or a day in the program. Use `showHowTo` when the trainer asks how to do a lift or asks to see one ("Show me a pause squat"), calling `getClient` first so it can mention the client's injuries.
 7. Treat the program state sent by the client as the truth. The trainer may have edited it. Rebalance from it; never revert trainer edits without saying so.
-8. Keep chat text short. The grid and the cards carry the detail.
+8. Use `showProgressCard` when the trainer asks how a lift is going. When the trainer asks for a change to existing cells to be reviewed first (e.g. "deload next week"), call `proposeChanges` with one row per changed cell before writing anything; on approve write exactly those rows with `updateProgram`, on reject change nothing. Building a program, swaps (rule 4) and rebalancing (rule 7) write directly as before.
+9. Keep chat text short. The grid and the cards carry the detail.
 
 ---
 
@@ -262,6 +266,7 @@ Playwright depends on these `data-testid` values (`TEST_IDS` in `contracts.ts`).
 | `week-summary` | `WeekSummary` root | `data-week`, `data-state` = `streaming`/`done` |
 | `swap-approval` | `SwapApproval` root | `data-state` = `streaming`/`pending`/`approved`/`rejected` |
 | `swap-approve`, `swap-reject` | its two buttons | |
+| `program-diff-card` | `ProgramDiffCard` root | `data-state` = `pending`/`approved`/`rejected` |
 
 ---
 
