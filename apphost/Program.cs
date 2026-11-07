@@ -4,7 +4,10 @@ var builder = DistributedApplication.CreateBuilder(args);
 // The agent has no launch profile, so set Development explicitly: user secrets (the OpenRouter key) only load there.
 var agent = builder.AddProject<Projects.PtCoach_Agent>("agent")
     .WithHttpEndpoint(name: "http")
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development");
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+    // Local dev only: put prompts, responses and tool arguments/results on the GenAI spans for the dashboard.
+    // The agent's own default (Telemetry:CaptureContent) stays off.
+    .WithEnvironment("Telemetry__CaptureContent", "true");
 
 var runtime = builder.AddJavaScriptApp("runtime", "../runtime") // runs the "dev" script
     .WithYarn()

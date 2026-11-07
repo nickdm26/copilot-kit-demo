@@ -1,7 +1,9 @@
 using AGUI.Server;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 using PtCoach.Agent.Chat;
+using PtCoach.Agent.Telemetry;
 using PtCoach.Agent.Tools;
 
 namespace PtCoach.Agent.Agents;
@@ -28,6 +30,7 @@ public sealed class CoachAgentBuilder(
     CoachTools coachTools,
     IEnumerable<ICoachAgentExtension> extensions,
     ILoggerFactory loggerFactory,
+    IOptions<TelemetryOptions> telemetry,
     IServiceProvider services)
 {
     public const string AgentTelemetrySource = "Experimental.Microsoft.Agents.AI";
@@ -37,8 +40,8 @@ public sealed class CoachAgentBuilder(
         var tools = coachTools.CreateAll().ToList();
         foreach (var ext in extensions) tools.AddRange(ext.GetTools(modelKey));
 
-        // The lazy client defers key / model resolution to the first run, so the app starts without an API key.
-        var chat = new LazyChatClient(chatClients, modelKey);
+        // Already instrumented (OpenTelemetryChatClient). Without a key it's a stub that fails the run, so the app still starts.
+        var chat = chatClients.Create(modelKey);
         AIAgent agent = chat.AsAIAgent(
             new ChatClientAgentOptions
             {
@@ -53,7 +56,11 @@ public sealed class CoachAgentBuilder(
             loggerFactory: loggerFactory,
             services: services);
 
-        agent = agent.AsBuilder().UseOpenTelemetry(AgentTelemetrySource).Build();
+        // EnableSensitiveData also flows to the chat client this layer auto-wires under the function-invoking client,
+        // which is where execute_tool spans get their arguments and results. Off unless Telemetry:CaptureContent is set.
+        agent = agent.AsBuilder()
+            .UseOpenTelemetry(AgentTelemetrySource, c => c.EnableSensitiveData = telemetry.Value.CaptureContent)
+            .Build();
         foreach (var ext in extensions) agent = ext.Wrap(modelKey, agent);
         return agent;
     }

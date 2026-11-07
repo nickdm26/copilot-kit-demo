@@ -213,6 +213,7 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 | `RUNTIME_URL` | web | runtime http endpoint |
 | `PORT` | runtime | the port it must listen on |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` etc. | all | Aspire standard |
+| `Telemetry__CaptureContent` | agent | `true` under Aspire: prompt/response text and tool arguments/results on GenAI spans. Agent default is off |
 
 **Runtime agents.** At startup the runtime fetches `${AGENT_URL}/models` and registers one `HttpAgent` per entry: agent id = `key`, url = `${AGENT_URL}/agent/${key}`. The CopilotKit `agentId` is therefore always the model key.
 

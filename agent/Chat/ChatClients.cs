@@ -57,21 +57,14 @@ public sealed class OpenRouterChatClientFactory(
         if (modelKey == ModelKeys.Replay)
         {
             // No network call and no key needed.
-            return ReplayChatClient.Load(r.Path, TimeSpan.FromMilliseconds(r.TextDelayMs), TimeSpan.FromMilliseconds(r.CallDelayMs))
-                .AsBuilder()
-                .UseOpenTelemetry(loggerFactory, TelemetrySource, c => c.EnableSensitiveData = telemetry.Value.CaptureContent)
-                .Use((inner, _) => new TelemetryEnrichingChatClient(inner, telemetry.Value.CaptureContent))
-                .Build();
+            return Instrument(ReplayChatClient.Load(r.Path, TimeSpan.FromMilliseconds(r.TextDelayMs), TimeSpan.FromMilliseconds(r.CallDelayMs)));
         }
 
         var o = openRouter.Value;
         if (string.IsNullOrWhiteSpace(o.ApiKey))
         {
-            const string message =
-                "The OpenRouter API key is not configured. Set it with: dotnet user-secrets set \"OpenRouter:ApiKey\" \"<key>\" --project agent";
-            // The AG-UI host turns exceptions into a generic RUN_ERROR, so log the real reason here.
-            loggerFactory.CreateLogger<OpenRouterChatClientFactory>().LogError(message);
-            throw new InvalidOperationException(message);
+            // Agents are built at startup, so don't throw here: the app must start without a key. Fail the run instead.
+            return Instrument(new MissingApiKeyChatClient(loggerFactory.CreateLogger<OpenRouterChatClientFactory>()));
         }
 
         var client = new OpenAIClient(
@@ -85,32 +78,39 @@ public sealed class OpenRouterChatClientFactory(
             chat = new RecordingChatClient(chat, r.RecordDirectory);
         }
 
-        return chat
-            .AsBuilder()
-            .UseOpenTelemetry(loggerFactory, TelemetrySource, c => c.EnableSensitiveData = telemetry.Value.CaptureContent)
-            .Use((inner, _) => new TelemetryEnrichingChatClient(inner, telemetry.Value.CaptureContent))
-            .Build();
+        return Instrument(chat);
     }
+
+    // The agent's OpenTelemetry layer finds this OpenTelemetryChatClient through GetService and doesn't add a second one,
+    // so each LLM call is one "chat <model>" span. Anything between the agent and this client must forward GetService.
+    private IChatClient Instrument(IChatClient chat) => chat
+        .AsBuilder()
+        .UseOpenTelemetry(loggerFactory, TelemetrySource, c => c.EnableSensitiveData = telemetry.Value.CaptureContent)
+        .Use((inner, _) => new TelemetryEnrichingChatClient(inner, telemetry.Value.CaptureContent))
+        .Build();
 }
 
-/// <summary>
-/// Resolves the real client on first use, so the app starts without an API key and a run fails with a clear message.
-/// </summary>
-public sealed class LazyChatClient(IChatClientFactory factory, string modelKey) : IChatClient
+/// <summary>Stands in for the OpenRouter client when no key is set, so the app starts and a run fails with a clear message.</summary>
+public sealed class MissingApiKeyChatClient(ILogger logger) : IChatClient
 {
-    private readonly Lazy<IChatClient> _inner = new(() => factory.Create(modelKey), LazyThreadSafetyMode.PublicationOnly);
+    public const string Message =
+        "The OpenRouter API key is not configured. Set it with: dotnet user-secrets set \"OpenRouter:ApiKey\" \"<key>\" --project agent";
 
     public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default) =>
-        _inner.Value.GetResponseAsync(messages, options, cancellationToken);
+        throw Fail();
 
     public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default) =>
-        _inner.Value.GetStreamingResponseAsync(messages, options, cancellationToken);
+        throw Fail();
 
     public object? GetService(Type serviceType, object? serviceKey = null) =>
         serviceKey is null && serviceType.IsInstanceOfType(this) ? this : null;
 
-    public void Dispose()
+    public void Dispose() { }
+
+    private InvalidOperationException Fail()
     {
-        if (_inner.IsValueCreated) _inner.Value.Dispose();
+        // The AG-UI host turns exceptions into a generic RUN_ERROR, so log the real reason here.
+        logger.LogError(Message);
+        return new InvalidOperationException(Message);
     }
 }
