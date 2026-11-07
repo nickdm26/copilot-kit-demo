@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "web",
-    "runtime"
+    "runtime",
+    "shared/seed"
   ],
   "packageManager": "yarn@1.22.22",
   "engines": {
