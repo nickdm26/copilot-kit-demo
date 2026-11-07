@@ -64,9 +64,9 @@ public class AgentHostTests
     {
         await using var factory = CreateFactory(fakeChat: false);
         var http = factory.CreateClient();
-        var response = await http.GetAsync("/models");
+        var response = await http.GetAsync("/models", TestContext.Current.CancellationToken);
         response.EnsureSuccessStatusCode();
-        var body = await response.Content.ReadAsStringAsync();
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain(SecretKey, body);
         Assert.DoesNotContain("apiKey", body, StringComparison.OrdinalIgnoreCase);
@@ -85,8 +85,8 @@ public class AgentHostTests
         await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(b =>
             b.UseSetting("OpenRouter:ApiKey", ""));
         var http = factory.CreateClient();
-        Assert.True((await http.GetAsync("/health")).IsSuccessStatusCode);
-        Assert.True((await http.GetAsync("/models")).IsSuccessStatusCode);
+        Assert.True((await http.GetAsync("/health", TestContext.Current.CancellationToken)).IsSuccessStatusCode);
+        Assert.True((await http.GetAsync("/models", TestContext.Current.CancellationToken)).IsSuccessStatusCode);
     }
 
     [Fact]
@@ -111,8 +111,8 @@ public class AgentHostTests
         };
         request.Headers.Accept.ParseAdd("text/event-stream");
 
-        using var response = await http.SendAsync(request, HttpCompletionOption.ResponseContentRead);
-        var body = await response.Content.ReadAsStringAsync();
+        using var response = await http.SendAsync(request, HttpCompletionOption.ResponseContentRead, TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
 
         Assert.True(response.IsSuccessStatusCode, body);
         Assert.Contains("text/event-stream", response.Content.Headers.ContentType?.ToString());

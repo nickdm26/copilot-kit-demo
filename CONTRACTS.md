@@ -230,13 +230,14 @@ In `agent/appsettings.json`. Ids chosen by Nick (all three support tool calling 
 "Models": {
   "deepseek": { "label": "DeepSeek", "modelId": "deepseek/deepseek-v4.1-flash-1017" },
   "qwen": { "label": "Qwen", "modelId": "qwen/qwen3.8-flash" },
-  "glm": { "label": "GLM", "modelId": "z-ai/glm-5.3-flash" }
+  "glm": { "label": "GLM", "modelId": "z-ai/glm-5.3-flash" },
+  "replay": { "label": "Replay", "modelId": "recorded/demo-run" }
 }
 ```
 
 - Key: lowercase, `^[a-z][a-z0-9-]*$`. It is the URL segment, the CopilotKit agent id and the dropdown value.
 - Dropdown text and chat header text: `"{label} ({modelId})"`, e.g. "Qwen (qwen/qwen3.8-flash)" (`modelDisplayName()`).
-- **Reserved key `replay`** (Phase 3): backed by a fake `IChatClient` that replays a recorded run. It makes no network call and needs no key.
+- **Reserved key `replay`**: backed by `ReplayChatClient`, which plays `agent/Replay/demo-run.json` turn by turn per thread (backend tools still run). No network call, no key. Record a new run by setting `Replay:RecordDirectory` (see README).
 
 ---
 

@@ -18,5 +18,7 @@
   <ItemGroup>
     <!-- Seed files are written by Lane D; the build must not fail when they are missing. -->
     <Content Include="..\shared\seed\exercises.json;..\shared\seed\clients.json" Link="Seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The run the "replay" model plays back (recorded from a live model). -->
+    <None Update="Replay\demo-run.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

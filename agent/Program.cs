@@ -10,6 +10,7 @@ builder.AddServiceDefaults();
 builder.Services.AddAGUIServer(); // AG-UI JSON types; without it tool-call args can serialize as {}
 
 builder.Services.Configure<OpenRouterOptions>(builder.Configuration.GetSection("OpenRouter"));
+builder.Services.Configure<ReplayOptions>(builder.Configuration.GetSection("Replay"));
 
 // Models allowlist, kept in config order.
 var models = new ModelsOptions();
