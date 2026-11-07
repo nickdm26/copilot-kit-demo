@@ -7,6 +7,7 @@ import { ProgramGrid } from "./components/program-grid";
 import { GenUi } from "./components/genui";
 import { ConnectedAgentStatusStrip } from "./components/agent/ConnectedAgentStatusStrip";
 import { ClientProfilePanel } from "./components/client/ClientProfilePanel";
+import { ConnectedSuggestionChips } from "./components/agent/ConnectedSuggestionChips";
 
 const selectClass = "bg-surface text-ink border border-border rounded-[var(--radius)] px-3 py-1 font-body text-sm";
 
@@ -87,6 +88,7 @@ function Shell() {
             {/* key={threadId} remounts the chat, so a model or client change clears the thread */}
             {modelKey ? <CopilotChat key={threadId} agentId={modelKey} threadId={threadId} /> : null}
           </div>
+                            <ConnectedSuggestionChips />
         </section>
       </main>
 
