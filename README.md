@@ -47,7 +47,7 @@ Open the `web` URL shown in the Aspire dashboard.
 1. Pick a model from the dropdown.
 2. Type: "4 week strength block for Sarah, 3 days a week, sore left shoulder. She wants overhead press in there." Models avoid overhead press on their own, so asking for it reliably triggers the swap card.
 3. Watch the program grid fill in day by day.
-4. Exercise cards and a weekly volume summary appear in the chat.
+4. A weekly volume summary appears in the chat after each week. Ask "Show me Monday" to get exercise cards.
 5. The agent flags the shoulder-risky lifts and asks to swap them. Tap Approve or Reject.
 6. Edit a cell (sets, reps or RPE) or drag a day header, then ask: "Rebalance week 1 around my edits."
 
