@@ -5,6 +5,7 @@ import Styleguide from "./components/ui/Styleguide";
 import MobileDemo from "./components/program/MobileDemo";
 import { ProgramGrid } from "./components/program-grid";
 import { GenUi } from "./components/genui";
+import { ConnectedAgentStatusStrip } from "./components/agent/ConnectedAgentStatusStrip";
 
 const selectClass = "bg-surface text-ink border border-border rounded-[var(--radius)] px-3 py-1 font-body text-sm";
 
@@ -63,7 +64,8 @@ function Shell() {
               {activeModel ? modelDisplayName(activeModel) : "Loading..."}
             </span>
           </div>
-          <div className="flex-1 min-h-0">
+                  <ConnectedAgentStatusStrip />
+                  <div className="flex-1 min-h-0">
             {/* key={threadId} remounts the chat, so a model or client change clears the thread */}
             {modelKey ? <CopilotChat key={threadId} agentId={modelKey} threadId={threadId} /> : null}
           </div>
