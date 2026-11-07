@@ -9,5 +9,11 @@
   "packageManager": "yarn@1.22.22",
   "engines": {
     "node": ">=22"
+  },
+  "scripts": {
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0"
   }
 }
