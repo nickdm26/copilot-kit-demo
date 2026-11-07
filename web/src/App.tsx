@@ -11,7 +11,7 @@ import { ConnectedSuggestionChips } from "./components/agent/ConnectedSuggestion
 import { ConnectedModelPicker } from "./components/agent/ConnectedModelPicker";
 import { ConnectedMobileShell } from "./layouts/ConnectedMobileShell";
 
-const selectClass = "bg-surface text-ink border border-border rounded-[var(--radius)] px-3 py-1 font-body text-sm";
+const selectClass = "bg-surface text-ink border border-border rounded-[var(--radius)] px-3 py-1 font-body text-xs sm:text-sm max-w-[140px] sm:max-w-none truncate";
 
 function Shell() {
   const { modelKey, clientId, threadId, models, clients, setModelKey, setClientId } = useSession();
@@ -23,7 +23,7 @@ function Shell() {
     value: client ? JSON.parse(JSON.stringify(client)) : { id: clientId },
   });
 
-  const header = (
+const header = (
     <header className="flex items-center gap-4 px-4 py-3 border-b border-border">
       <h1 className="font-heading text-2xl uppercase tracking-wide mr-auto">PT Coach</h1>
       <label className="flex items-center gap-2 text-sm text-ink-muted">
