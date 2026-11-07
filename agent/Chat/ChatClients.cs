@@ -50,7 +50,8 @@ public sealed class OpenRouterChatClientFactory(
 
         var client = new OpenAIClient(
             new ApiKeyCredential(o.ApiKey),
-            new OpenAIClientOptions { Endpoint = new Uri(o.BaseUrl) });
+            // The 100s default cuts off long tool-call streams (a full 4-week build can take ~2 minutes).
+            new OpenAIClientOptions { Endpoint = new Uri(o.BaseUrl), NetworkTimeout = TimeSpan.FromMinutes(5) });
 
         return client.GetChatClient(config.ModelId)
             .AsIChatClient()
