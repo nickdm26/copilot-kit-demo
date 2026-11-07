@@ -3,6 +3,7 @@ using PtCoach.Agent.Agents;
 using PtCoach.Agent.Chat;
 using PtCoach.Agent.Models;
 using PtCoach.Agent.Seed;
+using PtCoach.Agent.Telemetry;
 using PtCoach.Agent.Tools;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,10 +44,12 @@ builder.Services.AddSingleton<CoachTools>();
 builder.Services.AddSingleton<IChatClientFactory, OpenRouterChatClientFactory>();
 builder.Services.AddSingleton<CoachAgentBuilder>();
 builder.Services.AddProgramState(); // Lane F: updateProgram + shared program state (CONTRACTS section 9, Plan A)
+builder.Services.Configure<TelemetryOptions>(builder.Configuration.GetSection(TelemetryOptions.SectionName));
 builder.Services.AddHowTo(); // Task 9: showHowTo, the declarative how-to tool
 
 var app = builder.Build();
 app.MapDefaultEndpoints();
+app.UseMiddleware<RootSpanMiddleware>();
 
 app.MapGet("/models", (ModelsOptions m) =>
     Results.Json(

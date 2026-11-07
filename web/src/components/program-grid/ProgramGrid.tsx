@@ -54,7 +54,7 @@ function BoundGrid({ agentId, threadId, clientId }: { agentId: string; threadId:
 
   return (
     <GridFrame week={week}>
-      <div className="flex items-center gap-2 mb-3 flex-wrap" role="tablist" aria-label="Weeks">
+      <div className="flex items-center gap-1 sm:gap-2 mb-3 flex-wrap" role="tablist" aria-label="Weeks">
         {weekNumbers.map((n) => (
           <button
             key={n}
@@ -65,11 +65,11 @@ function BoundGrid({ agentId, threadId, clientId }: { agentId: string; threadId:
             aria-selected={n === week}
             onClick={() => setSelected(n)}
             className={cx(
-              "h-8 px-3 rounded-md border text-sm font-medium cursor-pointer tabular transition-colors",
+                    "h-7 sm:h-8 px-2 sm:px-3 rounded-md border text-xs sm:text-sm font-medium cursor-pointer tabular transition-colors",
               n === week ? "bg-accent-tint border-accent text-ink" : "bg-surface border-border text-ink-muted hover:text-ink",
             )}
           >
-            Week {n}
+                  {n}
             {touchedWeeks.has(n) && n !== week ? <span className="ml-1 text-accent" aria-label="updated">•</span> : null}
           </button>
         ))}
@@ -91,8 +91,8 @@ function BoundGrid({ agentId, threadId, clientId }: { agentId: string; threadId:
 
 function GridFrame({ week, children }: { week: number | null; children: React.ReactNode }) {
   return (
-    <section data-testid={TEST_IDS.programGrid} data-week={week ?? ""} className="p-4 min-w-0 overflow-auto">
-      <h2 className="font-heading text-xl uppercase tracking-wide mb-3">Program</h2>
+    <section data-testid={TEST_IDS.programGrid} data-week={week ?? ""} className="p-3 sm:p-4 min-w-0 min-h-0 overflow-y-auto overscroll-contain">
+      <h2 className="font-heading text-lg sm:text-xl uppercase tracking-wide mb-2 sm:mb-3">Program</h2>
       {children}
     </section>
   );
@@ -136,12 +136,13 @@ function WeekTable({ week, days, flags, touched, onEdit, onMove }: WeekTableProp
   };
 
   return (
-    <div
-      className="grid border border-border rounded-md bg-surface min-w-fit"
-      style={{ gridTemplateColumns: `2.5rem repeat(${days.length}, minmax(11rem, 1fr))` }}
-    >
-      <div className="border-b border-border" />
-      {days.map((d) => (
+      <div className="overflow-x-auto max-w-full">
+        <div
+          className="grid border border-border rounded-md bg-surface min-w-fit"
+          style={{ gridTemplateColumns: `2.5rem repeat(${days.length}, minmax(10rem, 1fr))` }}
+        >
+        <div className="border-b border-border" />
+        {days.map((d) => (
         <div
           key={d.day}
           data-testid={TEST_IDS.gridDay}
@@ -172,8 +173,9 @@ function WeekTable({ week, days, flags, touched, onEdit, onMove }: WeekTableProp
         <Row key={i} index={i} week={week} days={days} flags={flags} touched={touched} onEdit={onEdit} />
       ))}
     </div>
-  );
-}
+          </div>
+        );
+      }
 
 function Row({ index, week, days, flags, touched, onEdit }: Omit<WeekTableProps, "onMove"> & { index: number }) {
   return (

@@ -10,7 +10,9 @@ public static class ToolNames
     public const string UpdateProgram = "updateProgram";
     public const string ShowExerciseCard = "showExerciseCard";
     public const string ShowWeekSummary = "showWeekSummary";
+    public const string ShowProgressCard = "showProgressCard";
     public const string ProposeSwap = "proposeSwap";
+    public const string ProposeChanges = "proposeChanges";
     public const string ShowHowTo = "showHowTo";
 }
 
@@ -51,6 +53,18 @@ public sealed record ShowExerciseCardArgs(
 
 public sealed record ShowWeekSummaryArgs(int Week, string? Note = null);
 
+public sealed record ShowProgressCardArgs(
+    string Lift,
+    IReadOnlyList<ProgressPoint> Points,
+    string TopSet,
+    double Est1rm,
+    double? Goal = null,
+    ProgressTrend? Trend = null);
+
+public sealed record ProgressPoint(int Week, double Kg);
+
+public sealed record ProgressTrend(string Tone, string Label);
+
 /// <summary>When Week and Day are both null the swap applies to every occurrence.</summary>
 public sealed record ProposeSwapArgs(
     string FromExerciseId,
@@ -60,3 +74,9 @@ public sealed record ProposeSwapArgs(
     WeekDay? Day = null);
 
 public sealed record ProposeSwapResult(bool Approved, string FromExerciseId, string ToExerciseId);
+
+public sealed record ProposeChangesArgs(int Week, IReadOnlyList<DiffRow> Rows, string? Reason = null);
+
+public sealed record DiffRow(string Cell, string Before, string After);
+
+public sealed record ProposeChangesResult(bool Approved);

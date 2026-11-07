@@ -2,17 +2,25 @@ import { useEffect, useRef, useState } from "react";
 import { useFrontendTool, useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import {
   ProposeSwapArgsSchema,
+  ProposeChangesArgsSchema,
   ShowExerciseCardArgsSchema,
+  ShowProgressCardArgsSchema,
   ShowWeekSummaryArgsSchema,
   TOOLS,
   type ProposeSwapArgs,
   type ProposeSwapResult,
+  type ProposeChangesArgs,
+  type ProposeChangesResult,
+  type ShowProgressCardArgs,
 } from "../../lib/contracts";
 import { ExerciseCard } from "./ExerciseCard";
+import { ProgressCard } from "../agent/ProgressCard";
+import { ProgramDiffCard } from "../agent/ProgramDiffCard";
 import { SwapApproval, type SwapState } from "./SwapApproval";
 import { WeekSummary } from "./WeekSummary";
 import { useProgramState } from "./useProgramState";
 import { computeWeekVolume } from "./weekVolume";
+import { Card } from "../ui";
 import { useHowToTool } from "../declarative";
 
 function WeekSummaryTool({ args, streaming }: { args: { week?: number | string; note?: string }; streaming: boolean }) {
@@ -65,7 +73,79 @@ function SwapTool(props: {
   return <SwapApproval args={args} state={state} onAnswer={onAnswer} />;
 }
 
-/** Registers the three generative UI tools. Mount once inside the providers. Renders nothing. */
+function ProgressCardTool({ args, streaming }: { args: Partial<ShowProgressCardArgs>; streaming: boolean }) {
+  // A finished call without points has nothing to chart; some models send empty args.
+  if (!streaming && !args.points) return null;
+  if (!args.points || args.points.length < 2) {
+    return streaming ? (
+      <Card className="my-2 h-24 animate-pulse bg-surface" />
+    ) : null;
+  }
+  return (
+    <ProgressCard
+      lift={args.lift ?? "Lift"}
+      points={args.points}
+      topSet={args.topSet ?? ""}
+      est1rm={args.est1rm ?? 0}
+      goal={args.goal}
+      trend={args.trend ?? { tone: "ok", label: "Progressing" }}
+      className="my-2"
+    />
+  );
+}
+
+function ProposeChangesTool(props: {
+  args: Partial<ProposeChangesArgs>;
+  status: string;
+  result?: string;
+  respond?: (r: unknown) => Promise<void>;
+}) {
+  const { args, status, result, respond } = props;
+  const parsed = ProposeChangesArgsSchema.safeParse(args);
+  const valid = parsed.success ? parsed.data : null;
+  let cardStatus: "pending" | "approved" | "rejected" = "pending";
+  if (status === "complete") {
+    try {
+      const r = JSON.parse(result ?? "{}");
+      cardStatus = r.approved === true ? "approved" : "rejected";
+    } catch {
+      cardStatus = "rejected";
+    }
+  }
+
+  const handleApproveAll = () => {
+    if (!respond) return;
+    const out: ProposeChangesResult = { approved: true };
+    void respond(out);
+  };
+
+  const handleReject = () => {
+    if (!respond) return;
+    const out: ProposeChangesResult = { approved: false };
+    void respond(out);
+  };
+
+  const handleSuggest = (text: string) => {
+    if (!respond) return;
+    // Reject the proposal so the agent gets a turn back
+    const out: ProposeChangesResult = { approved: false };
+    void respond(out);
+  };
+
+  return (
+    <ProgramDiffCard
+      week={valid?.week ?? 0}
+      rows={valid?.rows ?? [{ cell: "…", before: "…", after: "…" }]}
+      reason={valid?.reason}
+      status={cardStatus}
+      onApproveAll={handleApproveAll}
+      onReject={handleReject}
+      onSuggest={handleSuggest}
+    />
+  );
+}
+
+/** Registers the generative UI tools. Mount once inside the providers. Renders nothing. */
 export function GenUi(): null {
   // useFrontendTool (not useRenderTool): useRenderTool only renders, it never sends the tool definition to the model.
   useFrontendTool({
@@ -91,6 +171,18 @@ export function GenUi(): null {
     render: ({ args, status }) => <WeekSummaryTool args={args} streaming={status === "inProgress"} />,
   });
 
+  useFrontendTool({
+    name: TOOLS.showProgressCard,
+    description:
+      "Show a progress card (chart of a lift's weekly top-set trend) in the chat when the trainer asks how a lift is going.",
+    parameters: ShowProgressCardArgsSchema,
+    followUp: false,
+    handler: async () => "shown",
+    render: ({ args, status }) => (
+      <ProgressCardTool args={args} streaming={status === "inProgress"} />
+    ),
+  });
+
   useHumanInTheLoop({
     name: TOOLS.proposeSwap,
     description:
@@ -100,6 +192,16 @@ export function GenUi(): null {
       <SwapTool args={args} status={status} result={result} respond={respond} />
     ),
   });
+
+    useHumanInTheLoop({
+      name: TOOLS.proposeChanges,
+      description:
+        "Ask the trainer to approve or reject a batch of program changes. Returns { approved }.",
+      parameters: ProposeChangesArgsSchema,
+      render: ({ args, status, result, respond }) => (
+        <ProposeChangesTool args={args} status={status} result={result} respond={respond} />
+      ),
+    });
 
   // showHowTo is a backend tool; this only renders its calls (declarative how-to, Task 9).
   useHowToTool();

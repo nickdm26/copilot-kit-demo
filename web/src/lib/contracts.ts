@@ -207,7 +207,9 @@ export const TOOLS = {
   updateProgram: "updateProgram",
   showExerciseCard: "showExerciseCard",
   showWeekSummary: "showWeekSummary",
+  showProgressCard: "showProgressCard",
   proposeSwap: "proposeSwap",
+  proposeChanges: "proposeChanges",
   /** Declarative how-to. Args schema lives in components/declarative/schema.ts (the security boundary). */
   showHowTo: "showHowTo",
 } as const;
@@ -271,6 +273,33 @@ export const ShowWeekSummaryArgsSchema = z
   })
   .strict();
 
+/** showProgressCard (frontend render). One lift's recent weekly top-set trend. */
+export const ShowProgressCardArgsSchema = z
+  .object({
+    lift: z.string().max(60),
+    points: z
+      .array(
+        z
+          .object({
+            week: z.number().int().min(1).max(52),
+            kg: z.number().min(0).max(1000),
+          })
+          .strict(),
+      )
+      .min(2)
+      .max(26),
+    topSet: z.string().max(40),
+    est1rm: z.number().min(0).max(1000),
+    goal: z.number().min(0).max(1000).optional(),
+    trend: z
+      .object({
+        tone: z.enum(["ok", "flag"]),
+        label: z.string().max(40),
+      })
+      .strict(),
+  })
+  .strict();
+
 /**
  * proposeSwap (frontend human in the loop).
  * When week and day are both omitted the swap applies to every occurrence.
@@ -294,13 +323,42 @@ export const ProposeSwapResultSchema = z
   })
   .strict();
 
+/** proposeChanges (frontend human in the loop). Batch program changes for the trainer to approve or reject. */
+export const ProposeChangesArgsSchema = z
+  .object({
+    week: z.number().int().min(1).max(12),
+    rows: z
+      .array(
+        z
+          .object({
+            cell: z.string().max(40),
+            before: z.string().max(80),
+            after: z.string().max(80),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(20),
+    reason: z.string().max(200).optional(),
+  })
+  .strict();
+
+export const ProposeChangesResultSchema = z
+  .object({
+    approved: z.boolean(),
+  })
+  .strict();
+
 export type GetClientArgs = z.infer<typeof GetClientArgsSchema>;
 export type SearchExercisesArgs = z.infer<typeof SearchExercisesArgsSchema>;
 export type UpdateProgramArgs = z.infer<typeof UpdateProgramArgsSchema>;
 export type ShowExerciseCardArgs = z.infer<typeof ShowExerciseCardArgsSchema>;
 export type ShowWeekSummaryArgs = z.infer<typeof ShowWeekSummaryArgsSchema>;
+export type ShowProgressCardArgs = z.infer<typeof ShowProgressCardArgsSchema>;
 export type ProposeSwapArgs = z.infer<typeof ProposeSwapArgsSchema>;
 export type ProposeSwapResult = z.infer<typeof ProposeSwapResultSchema>;
+export type ProposeChangesArgs = z.infer<typeof ProposeChangesArgsSchema>;
+export type ProposeChangesResult = z.infer<typeof ProposeChangesResultSchema>;
 
 // ---------------------------------------------------------------------------
 // Weekly volume (WeekSummary)
