@@ -195,7 +195,7 @@ export function GenUi(): null {
   useHumanInTheLoop({
     name: TOOLS.proposeSwap,
     description:
-      "Ask the trainer to approve swapping one exercise for another. Returns { approved, fromExerciseId, toExerciseId }.",
+      "Ask the trainer to approve swapping one exercise for another. Call it before any swap, and for each shoulder-risky lift. Returns { approved, fromExerciseId, toExerciseId }.",
     parameters: ProposeSwapArgsSchema,
     render: ({ args, status, result, respond }) => (
       <SwapTool args={args} status={status} result={result} respond={respond} />
@@ -205,7 +205,7 @@ export function GenUi(): null {
     useHumanInTheLoop({
       name: TOOLS.proposeChanges,
       description:
-        "Ask the trainer to approve or reject a batch of program changes. Returns { approved }.",
+        "Ask the trainer to approve or reject a batch of program changes. Call it before changing any day already in the program (deloads, equipment swaps, rebalancing). Returns { approved }.",
       parameters: ProposeChangesArgsSchema,
       render: ({ args, status, result, respond }) => (
         <ProposeChangesTool args={args} status={status} result={result} respond={respond} />

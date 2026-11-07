@@ -20,7 +20,7 @@ import { cx } from "../ui";
 import { ChatEmptyState } from "./ChatEmptyState";
 import { ConnectedAgentStatusStrip } from "./ConnectedAgentStatusStrip";
 import { ConnectedModelPicker } from "./ConnectedModelPicker";
-import { ConnectedSuggestionChips, DEFAULT_SUGGESTIONS } from "./ConnectedSuggestionChips";
+import { ConnectedSuggestionChips, starterSuggestions } from "./ConnectedSuggestionChips";
 import { SystemMessage } from "./SystemMessage";
 import { useSendUserMessage } from "./useSendUserMessage";
 
@@ -104,7 +104,7 @@ function BoundChat({
       {notice ? <SystemMessage text={notice} /> : null}
       <ChatEmptyState
         clientName={firstName}
-        suggestions={DEFAULT_SUGGESTIONS.map((s) => s.label)}
+        suggestions={starterSuggestions(firstName).map((s) => s.label)}
         onPick={send}
       />
     </div>
