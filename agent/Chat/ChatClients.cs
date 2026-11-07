@@ -41,8 +41,11 @@ public sealed class OpenRouterChatClientFactory(
         var o = openRouter.Value;
         if (string.IsNullOrWhiteSpace(o.ApiKey))
         {
-            throw new InvalidOperationException(
-                "The OpenRouter API key is not configured. Set it with: dotnet user-secrets set \"OpenRouter:ApiKey\" \"<key>\" --project agent");
+            const string message =
+                "The OpenRouter API key is not configured. Set it with: dotnet user-secrets set \"OpenRouter:ApiKey\" \"<key>\" --project agent";
+            // The AG-UI host turns exceptions into a generic RUN_ERROR, so log the real reason here.
+            loggerFactory.CreateLogger<OpenRouterChatClientFactory>().LogError(message);
+            throw new InvalidOperationException(message);
         }
 
         var client = new OpenAIClient(

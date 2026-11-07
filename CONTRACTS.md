@@ -278,6 +278,8 @@ Defined once in `web/src/styles/theme.css`. **No raw colour values anywhere else
 Non-colour tokens: `--radius: 10px`, `--space: 4px` (spacing scale is multiples of it), `--font-heading: "Barlow Condensed"`, `--font-body: "Inter"`.
 
 - Tailwind v4 colour names map 1:1: `bg`, `surface`, `ink`, `ink-muted`, `border`, `accent`, `flag`, `ok` (e.g. `bg-surface`, `text-ink-muted`, `border-border`).
+- Derived tokens (in `theme.css` only, with Tailwind names): `accent-tint`, `flag-tint`, `ok-tint`, `accent-strong`, `flag-strong` (hover shades), `on-fill` (text on an accent/flag/ok fill).
+- **Inside the chat, CopilotKit redefines `--accent`, `--border` and `--radius`.** Components that render in the chat (all of `genui/`) must use the Tailwind utilities (`bg-accent`, `border-border`, `rounded-md`) or the `--color-*` variables, never raw `var(--accent)` / `var(--border)` / `var(--radius)`.
 - Dark mode follows `prefers-color-scheme`; `<html data-theme="light|dark">` overrides it.
 - Tints are derived with `color-mix()` inside `theme.css` only (e.g. `--accent-tint`).
 - Agent highlight: a cell the agent just wrote gets an `--accent` tint for about 2 s, then fades (class `agent-touched`).
