@@ -3,6 +3,7 @@ import { API, TEST_IDS, modelDisplayName } from "./lib/contracts";
 import { SessionProvider, useSession } from "./lib/session";
 import Styleguide from "./components/ui/Styleguide";
 import { ProgramGrid } from "./components/program-grid";
+import { GenUi } from "./components/genui";
 
 const selectClass = "bg-surface text-ink border border-border rounded-[var(--radius)] px-3 py-1 font-body text-sm";
 
@@ -80,6 +81,7 @@ export default function App() {
   return (
     <CopilotKitProvider runtimeUrl={API.copilotkit}>
       <SessionProvider>
+        <GenUi />
         <Shell />
       </SessionProvider>
     </CopilotKitProvider>

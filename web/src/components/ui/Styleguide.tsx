@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { Badge, Button, Card, Chip, Select, cx } from "./index";
+import { ExerciseCard } from "../genui/ExerciseCard";
+import { SwapApproval } from "../genui/SwapApproval";
+import { WeekSummary } from "../genui/WeekSummary";
 
 type ThemeMode = "light" | "dark" | "system";
 
@@ -219,7 +222,38 @@ export default function Styleguide() {
 
       <Section title="Generative UI (Lane E)">
         {/* LANE E: add ExerciseCard, WeekSummary and SwapApproval examples below this line. */}
-        <div data-testid="styleguide-genui" />
+        <div data-testid="styleguide-genui" className="grid gap-4 md:grid-cols-2 max-w-4xl">
+          <ExerciseCard
+            state="done"
+            args={{ exerciseId: "goblet-squat", sets: 3, reps: "8", rpe: 7, week: 1, day: "Mon", note: "Pause at the bottom." }}
+          />
+          <ExerciseCard state="streaming" args={{ exerciseId: "overhead-press" }} />
+          <ExerciseCard state="done" args={{ exerciseId: "nope", sets: 3, reps: "8", rpe: 7 }} />
+          <WeekSummary
+            state="done"
+            week={1}
+            note="Pulling is light."
+            rows={[
+              { muscle: "chest", sets: 3, verdict: "low" },
+              { muscle: "quads", sets: 10, verdict: "ok" },
+              { muscle: "back", sets: 18, verdict: "high" },
+            ]}
+          />
+          <WeekSummary state="streaming" week={undefined} rows={[]} />
+          <SwapApproval
+            state="pending"
+            args={{ fromExerciseId: "overhead-press", toExerciseId: "landmine-press", reason: "Sarah has a sore left shoulder." }}
+          />
+          <SwapApproval state="streaming" args={{ fromExerciseId: "overhead-press" }} />
+          <SwapApproval
+            state="approved"
+            args={{ fromExerciseId: "overhead-press", toExerciseId: "landmine-press", reason: "Sarah has a sore left shoulder." }}
+          />
+          <SwapApproval
+            state="rejected"
+            args={{ fromExerciseId: "overhead-press", toExerciseId: "landmine-press", reason: "Sarah has a sore left shoulder." }}
+          />
+        </div>
         {/* END LANE E */}
       </Section>
     </div>
