@@ -1,0 +1,14 @@
+[
+  {
+    "id": "sarah", "name": "Sarah", "age": 34, "goal": "strength", "experience": "intermediate", "daysPerWeek": 3,
+    "equipment": ["barbell", "dumbbell", "cable"],
+    "injuries": [ { "area": "shoulder", "side": "left", "severity": "mild", "note": "Pinches overhead" } ],
+    "notes": "Wants a stronger squat."
+  },
+  {
+    "id": "tom", "name": "Tom", "age": 52, "goal": "general", "experience": "beginner", "daysPerWeek": 3,
+    "equipment": ["dumbbell", "bodyweight"],
+    "injuries": [],
+    "notes": "New to lifting."
+  }
+]
