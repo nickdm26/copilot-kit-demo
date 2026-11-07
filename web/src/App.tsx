@@ -2,6 +2,7 @@ import { CopilotKitProvider, CopilotChat, useAgentContext } from "@copilotkit/re
 import { API, TEST_IDS, modelDisplayName } from "./lib/contracts";
 import { SessionProvider, useSession } from "./lib/session";
 import Styleguide from "./components/ui/Styleguide";
+import { ProgramGrid } from "./components/program-grid";
 
 const selectClass = "bg-surface text-ink border border-border rounded-[var(--radius)] px-3 py-1 font-body text-sm";
 
@@ -52,7 +53,7 @@ function Shell() {
       </header>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_420px] min-h-0">
-        <section className="p-4 text-ink-muted">Program grid (Lane F)</section>
+        <ProgramGrid />
         <section data-testid={TEST_IDS.chat} className="flex flex-col border-l border-border bg-surface min-h-0">
           <div className="px-4 py-2 border-b border-border flex items-center gap-2 text-sm">
             <span className="text-ink-muted">Active model</span>
