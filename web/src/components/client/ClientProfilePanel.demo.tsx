@@ -44,17 +44,15 @@ export function ClientProfilePanelDemo() {
         </div>
 
         {/* Dark background */}
-        <div
-          className="p-4 rounded-lg border border-border"
-          style={{ backgroundColor: "#141414", borderColor: "#2e2e2e" }}
-          data-theme="dark"
-        >
-          <h2
-            className="font-heading text-sm uppercase tracking-wide mb-3"
-            style={{ color: "#a8a6a0" }}
-          >
-            Dark
-          </h2>
+                <div
+                  className="p-4 rounded-lg border border-border bg-bg"
+                  data-theme="dark"
+                >
+                  <h2
+                    className="font-heading text-sm uppercase tracking-wide mb-3 text-ink-muted"
+                  >
+                    Dark
+                  </h2>
           {/* Re-fetch to ensure fresh component state */}
           <ClientProfilePanel {...profile} key="dark" />
         </div>
