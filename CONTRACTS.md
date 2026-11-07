@@ -223,17 +223,18 @@ It never appears in `appsettings*.json`, the runtime, the web app, Aspire parame
 
 ## 6. Model allowlist
 
-In `agent/appsettings.json`. Nick fills in the real ids.
+In `agent/appsettings.json`. Ids chosen by Nick (all three support tool calling on OpenRouter). Keys are config-driven: no code may hard-code them except tests, which set their own.
 
 ```json
 "Models": {
-  "quick":    { "label": "Quick",    "modelId": "TODO-provider/model" },
-  "thorough": { "label": "Thorough", "modelId": "TODO-provider/model" }
+  "deepseek": { "label": "DeepSeek", "modelId": "deepseek/deepseek-v4.1-flash-1017" },
+  "qwen": { "label": "Qwen", "modelId": "qwen/qwen3.8-flash" },
+  "glm": { "label": "GLM", "modelId": "z-ai/glm-5.3-flash" }
 }
 ```
 
 - Key: lowercase, `^[a-z][a-z0-9-]*$`. It is the URL segment, the CopilotKit agent id and the dropdown value.
-- Dropdown text and chat header text: `"{label} ({modelId})"`, e.g. "Quick (provider/model-name)" (`modelDisplayName()`).
+- Dropdown text and chat header text: `"{label} ({modelId})"`, e.g. "Qwen (qwen/qwen3.8-flash)" (`modelDisplayName()`).
 - **Reserved key `replay`** (Phase 3): backed by a fake `IChatClient` that replays a recorded run. It makes no network call and needs no key.
 
 ---

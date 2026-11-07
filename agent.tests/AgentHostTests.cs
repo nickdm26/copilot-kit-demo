@@ -71,9 +71,12 @@ public class AgentHostTests
         Assert.DoesNotContain(SecretKey, body);
         Assert.DoesNotContain("apiKey", body, StringComparison.OrdinalIgnoreCase);
         var models = JsonSerializer.Deserialize<List<ModelOption>>(body, ContractJson.Options)!;
-        Assert.Equal(["quick", "thorough"], models.Select(m => m.Key));
-        Assert.Equal(["Quick", "Thorough"], models.Select(m => m.Label));
-        Assert.Equal("test/quick-model", models[0].ModelId);
+        // appsettings.json models are merged in too, so check ours are present rather than the exact list.
+        var quick = Assert.Single(models, m => m.Key == "quick");
+        Assert.Equal("Quick", quick.Label);
+        Assert.Equal("test/quick-model", quick.ModelId);
+        Assert.Contains(models, m => m.Key == "thorough" && m.ModelId == "test/thorough-model");
+        Assert.All(models, m => Assert.False(string.IsNullOrWhiteSpace(m.ModelId)));
     }
 
     [Fact]
