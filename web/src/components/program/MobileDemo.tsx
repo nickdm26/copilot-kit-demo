@@ -14,7 +14,6 @@ type ThemeMode = "light" | "dark" | "system";
 export default function MobileDemo() {
   const [mode, setMode] = useState<ThemeMode>("system");
   const [activeTab, setActiveTab] = useState<MobileTab>("program");
-  const [showChat, setShowChat] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState(3);
   const [selectedDay, setSelectedDay] = useState("Wed");
   const [pendingCount, setPendingCount] = useState(1);
@@ -104,30 +103,10 @@ export default function MobileDemo() {
           <MobileShell
             tabs={defaultTabs}
             activeTab={activeTab}
-            onTabChange={(tab: MobileTab) => {
-              setActiveTab(tab);
-              if (tab === "coach") {
-                setShowChat(true);
-              } else {
-                setShowChat(false);
-              }
-            }}
+            onTabChange={setActiveTab}
             hasPendingApproval={hasPending}
-            showChat={showChat}
-            onChatBack={() => setShowChat(false)}
-            chatTitle={
-              <span className="font-heading text-lg uppercase tracking-wide">PT Coach</span>
-            }
-            chatContent={
-              <div className="flex items-center justify-center h-full p-8">
-                <p className="text-ink-muted text-sm">Chat content placeholder</p>
-              </div>
-            }
-          >
-            {activeTab === "program" && programContent}
-            {activeTab === "coach" && coachContent}
-            {activeTab === "client" && clientContent}
-          </MobileShell>
+            panels={{ program: programContent, coach: coachContent, client: clientContent }}
+          />
         </div>
       </div>
 

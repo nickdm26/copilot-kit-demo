@@ -9,7 +9,6 @@ export interface ConnectedMobileShellProps {
   programContent: ReactNode;
   coachContent: ReactNode;
   clientContent: ReactNode;
-  chatContent: ReactNode;
   footer: ReactNode;
 }
 
@@ -17,7 +16,7 @@ export interface ConnectedMobileShellProps {
  * ConnectedMobileShell
  *
  * Uses window.matchMedia to detect viewport width below 768px.
- * On mobile: renders MobileShell with tab-based navigation.
+ * On mobile: renders MobileShell with tab-based navigation (the header is shown on top, the footer is not; every tab stays mounted).
  * On desktop: renders the full grid layout.
  */
 export function ConnectedMobileShell({
@@ -26,7 +25,6 @@ export function ConnectedMobileShell({
   programContent,
   coachContent,
   clientContent,
-  chatContent,
   footer,
 }: ConnectedMobileShellProps) {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia(MQ).matches);
@@ -40,9 +38,9 @@ export function ConnectedMobileShell({
 
   if (!isMobile) {
     return (
-      <div className="min-h-screen flex flex-col bg-bg text-ink font-body">
+      <div className="h-dvh overflow-hidden flex flex-col bg-bg text-ink font-body">
         {header}
-        <main className="flex-1 grid grid-cols-1 lg:grid-cols-[260px_1fr_420px] min-h-0">
+        <main className="flex-1 grid grid-cols-1 lg:grid-cols-[260px_1fr_420px] grid-rows-[repeat(2,minmax(0,1fr))] lg:grid-rows-[minmax(0,1fr)] min-h-0">
           {sidebar}
           {programContent}
           {coachContent}
@@ -52,58 +50,10 @@ export function ConnectedMobileShell({
     );
   }
 
-  return (
-    <MobileShellInner
-      header={header}
-      programContent={programContent}
-      coachContent={coachContent}
-      clientContent={clientContent}
-      chatContent={chatContent}
-      footer={footer}
-    />
-  );
+  return <MobileTabs header={header} panels={{ program: programContent, coach: coachContent, client: clientContent }} />;
 }
 
-function MobileShellInner({
-  header,
-  programContent,
-  coachContent,
-  clientContent,
-  chatContent,
-  footer,
-}: {
-  header: ReactNode;
-  programContent: ReactNode;
-  coachContent: ReactNode;
-  clientContent: ReactNode;
-  chatContent: ReactNode;
-  footer: ReactNode;
-}) {
+function MobileTabs({ header, panels }: { header: ReactNode; panels: Record<MobileTab, ReactNode> }) {
   const [activeTab, setActiveTab] = useState<MobileTab>("program");
-  const [showChat, setShowChat] = useState(false);
-
-  const handleTabChange = (tab: MobileTab) => {
-    setActiveTab(tab);
-    if (tab === "coach") {
-      setShowChat(true);
-    }
-  };
-
-  return (
-    <MobileShell
-      tabs={defaultTabs}
-      activeTab={activeTab}
-      onTabChange={handleTabChange}
-      showChat={showChat}
-      onChatBack={() => setShowChat(false)}
-      chatTitle={
-        <span className="font-heading text-lg uppercase tracking-wide">PT Coach</span>
-      }
-      chatContent={chatContent}
-    >
-      {activeTab === "program" && programContent}
-      {activeTab === "coach" && coachContent}
-      {activeTab === "client" && clientContent}
-    </MobileShell>
-  );
+  return <MobileShell tabs={defaultTabs} activeTab={activeTab} onTabChange={setActiveTab} header={header} panels={panels} />;
 }

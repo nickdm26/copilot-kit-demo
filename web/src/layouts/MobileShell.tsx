@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cx } from "../components/ui";
 
 // ---------------------------------------------------------------------------
@@ -18,20 +18,17 @@ export interface MobileShellProps {
   tabs: MobileShellTab[];
   /** Active tab. */
   activeTab: MobileTab;
+  /** Shown above the tab panels on every tab (title, model picker, client picker). */
+  header?: ReactNode;
   /** Called when the user taps a tab. */
   onTabChange: (tab: MobileTab) => void;
   /** True when the coach agent has pending changes to approve. */
   hasPendingApproval?: boolean;
-  /** True when showing the chat screen (hides tab bar, shows back button). */
-  showChat?: boolean;
-  /** Called when the user taps the back button in chat mode. */
-  onChatBack?: () => void;
-  /** Chat header content (e.g. a title). Rendered in chat mode header. */
-  chatTitle?: ReactNode;
-  /** Rendered content for each tab. */
-  children: ReactNode;
-  /** Rendered content for the chat screen (only when showChat is true). */
-  chatContent?: ReactNode;
+  /**
+   * Content for each tab. Every panel stays mounted and the inactive ones are hidden, so switching tabs keeps
+   * state (the chat draft and any run in flight, the program grid's selected week, scroll positions).
+   */
+  panels: Record<MobileTab, ReactNode>;
   className?: string;
 }
 
@@ -82,28 +79,17 @@ export const defaultTabs: MobileShellTab[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * Mobile-first shell (below 768px) with a bottom tab bar.
- * Hides the tab bar when `showChat` is true and shows a back-arrow header instead.
+ * Mobile-first shell (below 768px) with a bottom tab bar that stays visible on every tab, Coach included.
  */
 export function MobileShell({
   tabs,
   activeTab,
   onTabChange,
   hasPendingApproval = false,
-  showChat = false,
-  onChatBack,
-  chatTitle,
-  children,
-  chatContent,
+  header,
+  panels,
   className,
 }: MobileShellProps) {
-  const [showMobileShell] = useState(true);
-
-  if (!showMobileShell) {
-    // Fallback: just render children (desktop path — handled via CSS media query)
-    return <div className={className}>{children}</div>;
-  }
-
   return (
     <div
       className={cx(
@@ -112,78 +98,64 @@ export function MobileShell({
         className,
       )}
     >
-      {/* Main content area */}
-      <div className="relative flex-1 min-h-0">
-        {/* Tab content */}
-        {!showChat && <div className="absolute inset-0 overflow-y-auto overscroll-contain">{children}</div>}
+      {header}
 
-        {/* Chat overlay */}
-        {showChat && (
-          <div className="absolute inset-0 flex flex-col bg-surface">
-            {/* Chat header with back button */}
-            <header className="flex items-center gap-3 border-b border-border px-2">
-              <button
-                type="button"
-                onClick={onChatBack}
-                aria-label="Back"
-                className="flex h-11 w-11 items-center justify-center rounded-md text-ink hover:bg-accent-tint cursor-pointer transition-colors"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-                  <path d="M19 12H5" />
-                  <path d="M12 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <div className="flex-1 min-w-0 py-2">{chatTitle}</div>
-            </header>
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-              {chatContent}
-            </div>
+      {/* Tab panels: all stay mounted; only the active one is visible. */}
+      <div className="relative flex-1 min-h-0">
+        {tabs.map((tab) => (
+          <div
+            key={tab.id}
+            role="tabpanel"
+            aria-label={tab.label}
+            data-testid={`mobile-panel-${tab.id}`}
+            hidden={tab.id !== activeTab}
+            className="absolute inset-0 overflow-y-auto overscroll-contain"
+          >
+            {panels[tab.id]}
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Bottom tab bar (hidden during chat) */}
-      {!showChat && (
-        <nav
-          className="flex border-t border-border bg-surface"
-          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-          role="tablist"
-          aria-label="Main navigation"
-        >
-          {tabs.map((tab) => {
-            const isActive = tab.id === activeTab;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => onTabChange(tab.id)}
-                className={cx(
-                  "relative flex flex-1 flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-                  "h-[52px]",
-                  isActive
-                    ? "text-ink font-bold"
-                    : "text-ink-muted font-medium",
+      {/* Bottom tab bar */}
+      <nav
+        className="flex border-t border-border bg-surface"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        role="tablist"
+        aria-label="Main navigation"
+      >
+        {tabs.map((tab) => {
+          const isActive = tab.id === activeTab;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onTabChange(tab.id)}
+              className={cx(
+                "relative flex flex-1 flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+                "h-[52px]",
+                isActive
+                  ? "text-ink font-bold"
+                  : "text-ink-muted font-medium",
+              )}
+            >
+              <div className="relative">
+                {tab.icon}
+                {/* Accent dot for pending approval on Coach tab */}
+                {hasPendingApproval && tab.id === "coach" && (
+                  <span
+                    className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent border-2 border-surface"
+                    aria-label="Pending approval"
+                  />
                 )}
-              >
-                <div className="relative">
-                  {tab.icon}
-                  {/* Accent dot for pending approval on Coach tab */}
-                  {hasPendingApproval && tab.id === "coach" && (
-                    <span
-                      className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full bg-accent border-2 border-surface"
-                      aria-label="Pending approval"
-                    />
-                  )}
-                </div>
-                <span className="text-[11px] leading-none">{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      )}
+              </div>
+              <span className="text-[11px] leading-none">{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }

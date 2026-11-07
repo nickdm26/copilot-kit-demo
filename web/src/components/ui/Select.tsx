@@ -12,7 +12,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
     <select
       ref={ref}
       className={cx(
-        "h-10 rounded-md border border-border bg-surface px-3 text-sm text-ink font-body cursor-pointer",
+        "h-10 max-w-full rounded-md border border-border bg-surface px-3 text-sm text-ink font-body cursor-pointer",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
         "disabled:opacity-45 disabled:cursor-not-allowed",
         className,

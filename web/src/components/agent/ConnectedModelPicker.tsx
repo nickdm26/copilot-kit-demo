@@ -35,8 +35,9 @@ export function ConnectedModelPicker() {
   );
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-1 items-center gap-2">
       <ModelPicker
+        className="min-w-0 flex-1 sm:flex-none"
         models={pickerModels}
         value={modelKey}
         onChange={handleChange}

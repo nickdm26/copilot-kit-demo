@@ -5,6 +5,7 @@ const PROMPT =
   "4 week strength block for Sarah, 3 days a week, sore left shoulder. She wants overhead press in there.";
 
 test("demo script against the replay model", async ({ page }) => {
+  test.setTimeout(120_000);
   const errors: string[] = [];
   const runErrors: string[] = [];
   let inFlight = 0;

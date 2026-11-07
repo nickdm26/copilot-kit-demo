@@ -10,8 +10,9 @@ if (!baseURL) {
 
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 240_000,
-  expect: { timeout: 20_000 },
+  // Fail fast. Specs that drive an agent run (demo, mobile) raise their own test timeout.
+  timeout: 30_000,
+  expect: { timeout: 10_000 },
   fullyParallel: false,
   workers: 1,
   retries: 0,
@@ -19,6 +20,9 @@ export default defineConfig({
   use: {
     baseURL,
     viewport: { width: 1400, height: 900 },
+    // Without these a click on a missing element waits for the whole test timeout.
+    actionTimeout: 10_000,
+    navigationTimeout: 30_000,
     trace: "retain-on-failure",
   },
   projects: [{ name: "chromium", use: { browserName: "chromium" } }],

@@ -24,13 +24,13 @@ function Shell() {
   });
 
 const header = (
-    <header className="flex items-center gap-4 px-4 py-3 border-b border-border">
-      <h1 className="font-heading text-2xl uppercase tracking-wide mr-auto">PT Coach</h1>
-      <label className="flex items-center gap-2 text-sm text-ink-muted">
+    <header className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-border">
+      <h1 className="font-heading text-2xl uppercase tracking-wide mr-auto order-1 sm:order-none">PT Coach</h1>
+      <label className="order-3 sm:order-none flex w-full min-w-0 items-center gap-2 text-sm text-ink-muted sm:w-auto">
         Model
         <ConnectedModelPicker />
       </label>
-      <label className="flex items-center gap-2 text-sm text-ink-muted">
+      <label className="order-2 sm:order-none flex items-center gap-2 text-sm text-ink-muted">
         Client
         <select
           data-testid={TEST_IDS.clientSelect}
@@ -65,7 +65,7 @@ const header = (
   );
 
   const chatPane = (
-    <section data-testid={TEST_IDS.chat} className="flex flex-col border-l border-border bg-surface min-h-0">
+    <section data-testid={TEST_IDS.chat} className="flex h-full flex-col border-t lg:border-t-0 lg:border-l border-border bg-surface min-h-0 overflow-hidden">
       <div className="px-4 py-2 border-b border-border flex items-center gap-2 text-sm">
         <span className="text-ink-muted">Active model</span>
         <span data-testid={TEST_IDS.activeModel} className="text-accent font-medium">
@@ -73,7 +73,7 @@ const header = (
         </span>
       </div>
       <ConnectedAgentStatusStrip />
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-hidden [&>*]:h-full">
         {modelKey ? <CopilotChat key={threadId} agentId={modelKey} threadId={threadId} /> : null}
       </div>
       <ConnectedSuggestionChips />
@@ -103,7 +103,6 @@ const header = (
       programContent={<ProgramGrid />}
       coachContent={chatPane}
       clientContent={clientContent}
-      chatContent={chatPane}
       footer={
         <footer data-testid={TEST_IDS.disclaimer} className="px-4 py-2 border-t border-border text-xs text-ink-muted">
           Demo only. Not medical advice.
