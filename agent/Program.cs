@@ -7,6 +7,7 @@ using PtCoach.Agent.Tools;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
+builder.Services.AddAGUIServer(); // AG-UI JSON types; without it tool-call args can serialize as {}
 
 builder.Services.Configure<OpenRouterOptions>(builder.Configuration.GetSection("OpenRouter"));
 

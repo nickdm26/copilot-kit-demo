@@ -14,10 +14,14 @@ import { WeekSummary } from "./WeekSummary";
 import { useProgramState } from "./useProgramState";
 import { computeWeekVolume } from "./weekVolume";
 
-function WeekSummaryTool({ args, streaming }: { args: { week?: number; note?: string }; streaming: boolean }) {
+function WeekSummaryTool({ args, streaming }: { args: { week?: number | string; note?: string }; streaming: boolean }) {
   const program = useProgramState();
-  const rows = args.week === undefined ? [] : computeWeekVolume(program, args.week);
-  return <WeekSummary week={args.week} note={args.note} rows={rows} state={streaming ? "streaming" : "done"} />;
+  // Some models send the week as a string ("2"); a few send no args at all.
+  const parsed = Number(args.week);
+  const week = args.week === undefined || !Number.isInteger(parsed) ? undefined : parsed;
+  if (!streaming && week === undefined) return null;
+  const rows = week === undefined ? [] : computeWeekVolume(program, week);
+  return <WeekSummary week={week} note={args.note} rows={rows} state={streaming ? "streaming" : "done"} />;
 }
 
 function SwapTool(props: {
@@ -65,7 +69,8 @@ export function GenUi(): null {
     name: TOOLS.showWeekSummary,
     description: "Show the weekly training volume (sets per muscle) for a week of the current program.",
     parameters: ShowWeekSummaryArgsSchema,
-    followUp: false,
+    // The agent shows a summary after each week mid-build, so it must get a turn back to write the next week.
+    followUp: true,
     handler: async () => "shown",
     render: ({ args, status }) => <WeekSummaryTool args={args} streaming={status === "inProgress"} />,
   });

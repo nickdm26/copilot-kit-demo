@@ -40,10 +40,16 @@ public sealed class CoachAgentBuilder(
         // The lazy client defers key / model resolution to the first run, so the app starts without an API key.
         var chat = new LazyChatClient(chatClients, modelKey);
         AIAgent agent = chat.AsAIAgent(
-            instructions: CoachPrompt.Instructions,
-            name: $"coach-{modelKey}",
-            description: "PT Coach",
-            tools: tools,
+            new ChatClientAgentOptions
+            {
+                Name = $"coach-{modelKey}",
+                Description = "PT Coach",
+                ChatOptions = new ChatOptions { Instructions = CoachPrompt.Instructions, Tools = tools },
+                // Approval binding only honours approvals recorded in a server-side session, but CopilotKit replays the
+                // whole history each run, so a proposeSwap answer was dropped and the run failed. None of our backend
+                // tools needs approval (the client can set program state directly anyway), so binding guards nothing here.
+                DisableApprovalResponseBinding = true,
+            },
             loggerFactory: loggerFactory,
             services: services);
 

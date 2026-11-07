@@ -163,7 +163,7 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 | `searchExercises` | .NET backend | `{ query?, pattern?, muscle?, equipment?, maxShoulderStress? }`, filters AND-ed, `query` matches name/id case-insensitively | `Exercise[]`, at most 10 | none | |
 | `updateProgram` | .NET backend, result mapped to `STATE_SNAPSHOT` (fallback: frontend tool) | `{ clientId?, goal?, daysPerWeek?, days?: [{ week, day, focus, exercises }], removeDays?: [{ week, day }], flags? }` | the full `ProgramState` | program grid | `useAgent` (fallback: `useFrontendTool`) |
 | `showExerciseCard` | frontend render | `{ exerciseId, sets, reps, rpe, week?, day?, note? }` | n/a | `ExerciseCard` | `useFrontendTool` (`followUp: false`, render) |
-| `showWeekSummary` | frontend render | `{ week, note? }` | n/a | `WeekSummary` | `useFrontendTool` (`followUp: false`, render) |
+| `showWeekSummary` | frontend render | `{ week, note? }` | n/a | `WeekSummary` | `useFrontendTool` (`followUp: true`, render: the agent keeps building after each week) |
 | `proposeSwap` | frontend human in the loop | `{ fromExerciseId, toExerciseId, reason, week?, day? }` (no week and no day means every occurrence) | `{ approved, fromExerciseId, toExerciseId }` via `respond()` | `SwapApproval` | `useHumanInTheLoop` |
 
 - Why `useFrontendTool` for the two render tools: in CopilotKit 1.85.0 `useRenderTool` never sends the tool definition to the model, and `useComponent` gives its render no status (so no streaming skeleton).
