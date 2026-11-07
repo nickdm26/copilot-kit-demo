@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pt-coach-demo.local/program.schema.json",
+  "title": "ProgramState",
+  "description": "The shared program state. Read and written by the program grid and the agent. See CONTRACTS.md section 1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["clientId", "goal", "daysPerWeek", "weeks", "flags"],
+  "properties": {
+    "clientId": { "$ref": "#/$defs/id" },
+    "goal": { "$ref": "#/$defs/goal" },
+    "daysPerWeek": { "type": "integer", "minimum": 1, "maximum": 6 },
+    "weeks": {
+      "type": "array",
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/week" }
+    },
+    "flags": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/flag" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "goal": {
+      "enum": ["strength", "hypertrophy", "general", "endurance-support"]
+    },
+    "weekDay": {
+      "enum": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    },
+    "week": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["week", "days"],
+      "properties": {
+        "week": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "days": {
+          "type": "array",
+          "maxItems": 7,
+          "items": { "$ref": "#/$defs/day" }
+        }
+      }
+    },
+    "day": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["day", "focus", "exercises"],
+      "properties": {
+        "day": { "$ref": "#/$defs/weekDay" },
+        "focus": { "type": "string", "maxLength": 40 },
+        "exercises": {
+          "type": "array",
+          "maxItems": 10,
+          "items": { "$ref": "#/$defs/exerciseEntry" }
+        }
+      }
+    },
+    "exerciseEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exerciseId", "sets", "reps", "rpe", "note"],
+      "properties": {
+        "exerciseId": { "$ref": "#/$defs/id" },
+        "sets": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "reps": {
+          "description": "A count (\"5\"), a range (\"8-10\") or a hold in seconds (\"30s\").",
+          "type": "string",
+          "pattern": "^[0-9]{1,2}(-[0-9]{1,2}|s)?$"
+        },
+        "rpe": { "type": "number", "minimum": 5, "maximum": 10, "multipleOf": 0.5 },
+        "note": { "type": "string", "maxLength": 140 }
+      }
+    },
+    "flag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exerciseId", "reason"],
+      "properties": {
+        "exerciseId": { "$ref": "#/$defs/id" },
+        "reason": { "type": "string", "maxLength": 140 }
+      }
+    }
+  },
+  "examples": [
+    {
+      "clientId": "sarah",
+      "goal": "strength",
+      "daysPerWeek": 3,
+      "weeks": [
+        {
+          "week": 1,
+          "days": [
+            {
+              "day": "Mon",
+              "focus": "Lower",
+              "exercises": [
+                { "exerciseId": "back-squat", "sets": 4, "reps": "5", "rpe": 7, "note": "" }
+              ]
+            }
+          ]
+        }
+      ],
+      "flags": [{ "exerciseId": "overhead-press", "reason": "left shoulder" }]
+    }
+  ]
+}

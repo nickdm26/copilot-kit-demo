@@ -1,0 +1,12 @@
+{
+  "name": "pt-coach-demo",
+  "private": true,
+  "workspaces": [
+    "web",
+    "runtime"
+  ],
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=22"
+  }
+}
