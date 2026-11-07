@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="apphost/PtCoach.AppHost.csproj" />
+  <Project Path="agent/PtCoach.Agent.csproj" />
+  <Project Path="agent.tests/PtCoach.Agent.Tests.csproj" />
+  <Project Path="servicedefaults/PtCoach.ServiceDefaults.csproj" />
+</Solution>

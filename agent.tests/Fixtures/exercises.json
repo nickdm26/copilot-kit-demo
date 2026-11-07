@@ -1,0 +1,8 @@
+[
+  { "id": "back-squat", "name": "Back Squat", "pattern": "squat", "muscles": ["quads", "glutes"], "equipment": ["barbell"], "shoulderStress": "medium", "cues": ["Brace your core", "Knees track over toes"] },
+  { "id": "goblet-squat", "name": "Goblet Squat", "pattern": "squat", "muscles": ["quads", "glutes"], "equipment": ["dumbbell", "kettlebell"], "shoulderStress": "low", "cues": ["Elbows inside knees", "Chest tall"] },
+  { "id": "overhead-press", "name": "Overhead Press", "pattern": "vertical-push", "muscles": ["shoulders", "triceps"], "equipment": ["barbell"], "shoulderStress": "high", "cues": ["Squeeze glutes", "Press in a straight line"] },
+  { "id": "landmine-press", "name": "Landmine Press", "pattern": "vertical-push", "muscles": ["shoulders", "chest", "triceps"], "equipment": ["barbell"], "shoulderStress": "medium", "cues": ["Press up and forward", "Keep ribs down"] },
+  { "id": "dumbbell-floor-press", "name": "Dumbbell Floor Press", "pattern": "horizontal-push", "muscles": ["chest", "triceps"], "equipment": ["dumbbell"], "shoulderStress": "low", "cues": ["Elbows at 45 degrees", "Pause on the floor"] },
+  { "id": "face-pull", "name": "Face Pull", "pattern": "horizontal-pull", "muscles": ["shoulders", "back"], "equipment": ["cable", "band"], "shoulderStress": "low", "cues": ["Pull to eye level", "Rotate thumbs back"] }
+]
