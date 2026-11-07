@@ -17,6 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Seed files are written by Lane D; the build must not fail when they are missing. -->
-    <Content Include="..\shared\seed\*.json" Link="Seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\shared\seed\exercises.json;..\shared\seed\clients.json" Link="Seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
