@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PT Coach seed exercises",
+  "description": "shared/seed/exercises.json. Mirrors ExerciseSchema in web/src/lib/contracts.ts.",
+  "type": "array",
+  "minItems": 1,
+  "uniqueItems": true,
+  "items": { "$ref": "#/$defs/Exercise" },
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "Exercise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "pattern", "muscles", "equipment", "shoulderStress", "cues"],
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "pattern": {
+          "enum": [
+            "squat",
+            "hinge",
+            "lunge",
+            "horizontal-push",
+            "vertical-push",
+            "horizontal-pull",
+            "vertical-pull",
+            "carry",
+            "core",
+            "isolation"
+          ]
+        },
+        "muscles": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "chest",
+              "back",
+              "shoulders",
+              "biceps",
+              "triceps",
+              "quads",
+              "hamstrings",
+              "glutes",
+              "calves",
+              "core"
+            ]
+          }
+        },
+        "equipment": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "barbell",
+              "dumbbell",
+              "kettlebell",
+              "cable",
+              "machine",
+              "bodyweight",
+              "band",
+              "trap-bar"
+            ]
+          }
+        },
+        "shoulderStress": { "enum": ["low", "medium", "high"] },
+        "cues": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 3,
+          "items": { "type": "string", "minLength": 1, "maxLength": 80 }
+        }
+      }
+    }
+  }
+}
