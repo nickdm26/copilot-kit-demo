@@ -25,12 +25,21 @@ public sealed class ShowHowToTool(ILogger<ShowHowToTool> logger) : AIFunction
         "ui" is a tree of catalog nodes. Every node has "type" plus only the props listed:
         - Card { children: node[] }: container. Use one Card as the root.
         - Heading { text, meta? }: the exercise name; meta is a short note on the right, e.g. "Tempo 3-2-X".
-        - Stepper { steps: [{ title, cue, figure?: { pose, marker? } }] }: 3 to 5 steps the trainer clicks through. At most one Stepper.
-        - PoseFigure { pose, marker? }: a preset stick figure. pose is "stand", "half" or "bottom"; marker is "down", "hold" or "up". It cannot draw anything else.
-        - TempoStrip { segments: string[], follows?: "Stepper" }: about 3 short tempo boxes such as "3s down", "2s pause", "Up fast". With follows "Stepper", box 1 lights up on step 2, box 2 on step 3, and so on.
+        - Stepper { steps: [{ title, cue, figure?, tempoBox? }] }: 3 to 8 steps the trainer clicks through, one coaching cue each: setup, brace, each phase of the rep, the key form points. At most one Stepper.
+          figure takes the same props as PoseFigure (without "type").
+          tempoBox is the TempoStrip box (1 = the first) that lights up during this step. Leave it out for steps outside the tempo, such as the setup.
+        - PoseFigure { lift?, pose, marker?, view?, focus?, flag? }: a preset stick figure. It cannot draw anything else.
+          lift picks the figure: "squat" (bar on the back; also front, goblet and pause squats, lunges), "deadlift" (any hip hinge: deadlift, RDL, good morning), "bench" (lying on a bench: bench press, dumbbell press), "overhead" (standing overhead press), "row" (bent-over row) or "curl" (standing curl). Missing means "squat", so always set it for other lifts, and use the same lift in every figure.
+          pose is where the weight is: "stand" = top of the rep (lockout), "half" = halfway, "bottom" = lowest point (bar on the floor, on the chest, at the shoulders for a press, arms long for a row or curl).
+          marker is the weight's direction: "down", "hold" or "up".
+          view is the camera: "side" (the default: depth, back angle, bar path), "front" (stance and grip width, knees tracking over the toes, left and right) or "angle" (45 degrees, some of both). A step without view keeps the view of the step before. Change the view when a cue is easier to see from another side.
+          focus rings one body part to watch, in orange: "head", "shoulder", "elbow", "hand", "chest", "back", "hip", "knee" or "foot" (both sides).
+          flag { part, side? } rings a body part in red for the client's injury, e.g. { "part": "shoulder", "side": "left" }. side is "left" or "right", the client's own side; leave it out for both. A flag with a side shows best in the front view.
+          If no lift fits (e.g. a pull-up or a plank), leave every figure out rather than draw the wrong one.
+        - TempoStrip { segments: string[], follows?: "Stepper" }: about 3 short tempo boxes such as "3s down", "2s pause", "Up fast". With follows "Stepper", each step's tempoBox lights up its box.
         - Callout { tone, text }: a tinted note. tone is "ok", "flag" or "info".
         No other types or props. No HTML, markdown, styles, URLs or code. At most 4 levels deep and 50 nodes. Keep every text short.
-        Personalise it from the client profile: when the client has an injury that matters for this lift, end with a "flag" Callout that names it, e.g. "For Sarah: left shoulder. Wider grip, elbows down."
+        Personalise it from the client profile: when the client has an injury that matters for this lift, flag that body part on the figures where it is under load, and end with a "flag" Callout that names it, e.g. "For Sarah: left shoulder. Wider grip, elbows down."
         After the call, reply with one short sentence at most.
         """;
 
@@ -84,14 +93,30 @@ public sealed class ShowHowToTool(ILogger<ShowHowToTool> logger) : AIFunction
                 ["additionalProperties"] = false,
             };
         }
+        static JsonObject OneOf(string[] values) => new() { ["type"] = "string", ["enum"] = Enum(values) };
+        static JsonObject FigureProps() => new()
+        {
+            ["lift"] = OneOf(HowToValidator.Lifts),
+            ["pose"] = OneOf(HowToValidator.Poses),
+            ["marker"] = OneOf(HowToValidator.Markers),
+            ["view"] = OneOf(HowToValidator.Views),
+            ["focus"] = OneOf(HowToValidator.BodyParts),
+            ["flag"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["properties"] = new JsonObject
+                {
+                    ["part"] = OneOf(HowToValidator.BodyParts),
+                    ["side"] = OneOf(HowToValidator.Sides),
+                },
+                ["required"] = new JsonArray("part"),
+                ["additionalProperties"] = false,
+            },
+        };
         static JsonObject Figure() => new()
         {
             ["type"] = "object",
-            ["properties"] = new JsonObject
-            {
-                ["pose"] = new JsonObject { ["type"] = "string", ["enum"] = Enum(HowToValidator.Poses) },
-                ["marker"] = new JsonObject { ["type"] = "string", ["enum"] = Enum(HowToValidator.Markers) },
-            },
+            ["properties"] = FigureProps(),
             ["required"] = new JsonArray("pose"),
             ["additionalProperties"] = false,
         };
@@ -108,28 +133,33 @@ public sealed class ShowHowToTool(ILogger<ShowHowToTool> logger) : AIFunction
                     ["items"] = new JsonObject
                     {
                         ["type"] = "object",
-                        ["properties"] = new JsonObject { ["title"] = Str(60), ["cue"] = Str(160), ["figure"] = Figure() },
+                        ["properties"] = new JsonObject
+                        {
+                            ["title"] = Str(60),
+                            ["cue"] = Str(160),
+                            ["figure"] = Figure(),
+                            ["tempoBox"] = new JsonObject
+                            {
+                                ["type"] = "integer", ["minimum"] = 1, ["maximum"] = HowToValidator.MaxSegments,
+                            },
+                        },
                         ["required"] = new JsonArray("title", "cue"),
                         ["additionalProperties"] = false,
                     },
                 },
             }, "steps"),
-            Node("PoseFigure", new JsonObject
-            {
-                ["pose"] = new JsonObject { ["type"] = "string", ["enum"] = Enum(HowToValidator.Poses) },
-                ["marker"] = new JsonObject { ["type"] = "string", ["enum"] = Enum(HowToValidator.Markers) },
-            }, "pose"),
+            Node("PoseFigure", FigureProps(), "pose"),
             Node("TempoStrip", new JsonObject
             {
                 ["segments"] = new JsonObject
                 {
                     ["type"] = "array", ["minItems"] = 1, ["maxItems"] = HowToValidator.MaxSegments, ["items"] = Str(24),
                 },
-                ["follows"] = new JsonObject { ["type"] = "string", ["enum"] = Enum("Stepper") },
+                ["follows"] = OneOf(["Stepper"]),
             }, "segments"),
             Node("Callout", new JsonObject
             {
-                ["tone"] = new JsonObject { ["type"] = "string", ["enum"] = Enum(HowToValidator.Tones) },
+                ["tone"] = OneOf(HowToValidator.Tones),
                 ["text"] = Str(280),
             }, "tone", "text"),
         ];
@@ -174,16 +204,22 @@ public static class HowToValidator
     public const int MaxSegments = 6;
 
     public static readonly string[] Types = ["Card", "Heading", "Stepper", "PoseFigure", "TempoStrip", "Callout"];
+    public static readonly string[] Lifts = ["squat", "deadlift", "bench", "overhead", "row", "curl"];
     public static readonly string[] Poses = ["stand", "half", "bottom"];
     public static readonly string[] Markers = ["down", "hold", "up"];
+    public static readonly string[] Views = ["side", "front", "angle"];
+    public static readonly string[] BodyParts = ["head", "shoulder", "elbow", "hand", "chest", "back", "hip", "knee", "foot"];
+    public static readonly string[] Sides = ["left", "right"];
     public static readonly string[] Tones = ["ok", "flag", "info"];
+
+    private static readonly string[] FigureProps = ["lift", "pose", "marker", "view", "focus", "flag"];
 
     private static readonly Dictionary<string, string[]> Props = new()
     {
         ["Card"] = ["children"],
         ["Heading"] = ["text", "meta"],
         ["Stepper"] = ["steps"],
-        ["PoseFigure"] = ["pose", "marker"],
+        ["PoseFigure"] = FigureProps,
         ["TempoStrip"] = ["segments", "follows"],
         ["Callout"] = ["tone", "text"],
     };
@@ -199,6 +235,9 @@ public static class HowToValidator
         if (ctx.MaxDepth > MaxDepth) ctx.Errors.Add($"the tree is deeper than {MaxDepth} levels");
         if (ctx.Nodes > MaxNodes) ctx.Errors.Add($"the tree has more than {MaxNodes} nodes");
         if (ctx.Steppers > 1) ctx.Errors.Add("use at most one Stepper");
+        // A step's tempoBox must point at a real box of every TempoStrip that follows the Stepper.
+        if (ctx.FollowerBoxes.Count > 0 && ctx.MaxTempoBox > ctx.FollowerBoxes.Min())
+            ctx.Errors.Add($"a step has tempoBox {ctx.MaxTempoBox} but the TempoStrip has {ctx.FollowerBoxes.Min()} boxes");
         return ctx.Errors;
     }
 
@@ -226,6 +265,10 @@ public static class HowToValidator
         public int Nodes;
         public int MaxDepth;
         public int Steppers;
+        /// <summary>Highest tempoBox on any step.</summary>
+        public int MaxTempoBox;
+        /// <summary>Box counts of the TempoStrips that follow the Stepper.</summary>
+        public List<int> FollowerBoxes { get; } = [];
     }
 
     private static void CheckNode(JsonElement node, string path, int depth, Context ctx)
@@ -270,6 +313,8 @@ public static class HowToValidator
                 for (var i = 0; i < segments.Count; i++)
                     CheckText(segments[i], 24, $"{path}.segments.{i}", ctx);
                 OneOf(node, "follows", ["Stepper"], required: false, path, ctx);
+                if (Get(node, "follows") is { ValueKind: JsonValueKind.String } follows && follows.GetString() == "Stepper")
+                    ctx.FollowerBoxes.Add(segments.Count);
                 break;
             case "Callout":
                 OneOf(node, "tone", Tones, required: true, path, ctx);
@@ -282,7 +327,7 @@ public static class HowToValidator
     {
         if (step.ValueKind != JsonValueKind.Object) { ctx.Errors.Add($"{path}: must be an object"); return; }
         foreach (var prop in step.EnumerateObject())
-            if (prop.Name is not ("title" or "cue" or "figure") && prop.Value.ValueKind != JsonValueKind.Null)
+            if (prop.Name is not ("title" or "cue" or "figure" or "tempoBox") && prop.Value.ValueKind != JsonValueKind.Null)
                 ctx.Errors.Add($"{path}: a step has no prop '{prop.Name}'");
         Text(step, "title", 60, required: true, path, ctx);
         Text(step, "cue", 160, required: true, path, ctx);
@@ -291,16 +336,39 @@ public static class HowToValidator
             if (figure.ValueKind != JsonValueKind.Object) ctx.Errors.Add($"{path}.figure: must be an object");
             else CheckFigure(figure, $"{path}.figure", ctx, allowType: false);
         }
+        if (Get(step, "tempoBox") is { } box)
+        {
+            // Whole numbers only, as zod's .int() (2.0 is fine, 1.5 and "1" are not).
+            if (box.ValueKind != JsonValueKind.Number || !box.TryGetDouble(out var n) || n != Math.Floor(n) || n < 1 || n > MaxSegments)
+                ctx.Errors.Add($"{path}.tempoBox: must be a whole number from 1 to {MaxSegments}");
+            else ctx.MaxTempoBox = Math.Max(ctx.MaxTempoBox, (int)n);
+        }
     }
 
     private static void CheckFigure(JsonElement figure, string path, Context ctx, bool allowType)
     {
         if (!allowType)
             foreach (var prop in figure.EnumerateObject())
-                if (prop.Name is not ("pose" or "marker") && prop.Value.ValueKind != JsonValueKind.Null)
+                if (!FigureProps.Contains(prop.Name) && prop.Value.ValueKind != JsonValueKind.Null)
                     ctx.Errors.Add($"{path}: a figure has no prop '{prop.Name}'");
+        OneOf(figure, "lift", Lifts, required: false, path, ctx);
         OneOf(figure, "pose", Poses, required: true, path, ctx);
         OneOf(figure, "marker", Markers, required: false, path, ctx);
+        OneOf(figure, "view", Views, required: false, path, ctx);
+        OneOf(figure, "focus", BodyParts, required: false, path, ctx);
+        if (Get(figure, "flag") is { } flag)
+        {
+            if (flag.ValueKind != JsonValueKind.Object)
+            {
+                ctx.Errors.Add($"{path}.flag: must be an object like {{ \"part\": \"shoulder\", \"side\": \"left\" }}");
+                return;
+            }
+            foreach (var prop in flag.EnumerateObject())
+                if (prop.Name is not ("part" or "side") && prop.Value.ValueKind != JsonValueKind.Null)
+                    ctx.Errors.Add($"{path}.flag: a flag has no prop '{prop.Name}'");
+            OneOf(flag, "part", BodyParts, required: true, $"{path}.flag", ctx);
+            OneOf(flag, "side", Sides, required: false, $"{path}.flag", ctx);
+        }
     }
 
     /// <summary>The property, or null when it is missing or JSON null.</summary>

@@ -17,16 +17,31 @@ export const HOW_TO_LIMITS = {
   maxSegments: 6,
 } as const;
 
+/** Which stick figure to draw. Missing means "squat". */
+export const LIFTS = ["squat", "deadlift", "bench", "overhead", "row", "curl"] as const;
+/** Where the weight is in the rep: "stand" = top (lockout), "half" = halfway, "bottom" = lowest point. */
 export const POSES = ["stand", "half", "bottom"] as const;
 export const MARKERS = ["down", "hold", "up"] as const;
+/** Camera angle. "angle" is halfway between side and front (45 degrees). Missing means "side". */
+export const VIEWS = ["side", "front", "angle"] as const;
+/** Body parts a figure can ring: `focus` in the accent colour, `flag` (an injury) in the flag colour. */
+export const BODY_PARTS = ["head", "shoulder", "elbow", "hand", "chest", "back", "hip", "knee", "foot"] as const;
+/** The client's own left or right. */
+export const SIDES = ["left", "right"] as const;
 export const CALLOUT_TONES = ["ok", "flag", "info"] as const;
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 
+const FigureFlagSchema = z.object({ part: z.enum(BODY_PARTS), side: z.enum(SIDES).optional() }).strict();
+
 export const PoseFigurePropsSchema = z
   .object({
+    lift: z.enum(LIFTS).optional(),
     pose: z.enum(POSES),
     marker: z.enum(MARKERS).optional(),
+    view: z.enum(VIEWS).optional(),
+    focus: z.enum(BODY_PARTS).optional(),
+    flag: FigureFlagSchema.optional(),
   })
   .strict();
 
@@ -35,6 +50,8 @@ export const StepSchema = z
     title: text(60),
     cue: text(160),
     figure: PoseFigurePropsSchema.optional(),
+    /** The TempoStrip box (1-based) to light during this step. */
+    tempoBox: z.number().int().min(1).max(HOW_TO_LIMITS.maxSegments).optional(),
   })
   .strict();
 
@@ -64,8 +81,13 @@ export type CalloutNode = z.infer<typeof CalloutSchema>;
 export type CardNode = { type: "Card"; children: HowToNode[] };
 export type HowToNode = CardNode | HeadingNode | StepperNode | PoseFigureNode | TempoStripNode | CalloutNode;
 export type HowToStep = z.infer<typeof StepSchema>;
+export type Lift = (typeof LIFTS)[number];
 export type Pose = (typeof POSES)[number];
 export type Marker = (typeof MARKERS)[number];
+export type View = (typeof VIEWS)[number];
+export type BodyPart = (typeof BODY_PARTS)[number];
+export type Side = (typeof SIDES)[number];
+export type FigureFlag = z.infer<typeof FigureFlagSchema>;
 export type CalloutTone = (typeof CALLOUT_TONES)[number];
 
 const CardSchema = z
@@ -124,10 +146,24 @@ function dropNullProps(value: unknown): unknown {
   return value;
 }
 
-function measure(node: HowToNode, depth: number, acc: { maxDepth: number; nodes: number; steppers: number }) {
+interface Measure {
+  maxDepth: number;
+  nodes: number;
+  steppers: number;
+  /** Highest tempoBox on any step. */
+  maxTempoBox: number;
+  /** Box counts of the TempoStrips that follow the Stepper. */
+  followerBoxes: number[];
+}
+
+function measure(node: HowToNode, depth: number, acc: Measure) {
   acc.nodes += 1;
   acc.maxDepth = Math.max(acc.maxDepth, depth);
-  if (node.type === "Stepper") acc.steppers += 1;
+  if (node.type === "Stepper") {
+    acc.steppers += 1;
+    for (const step of node.steps) acc.maxTempoBox = Math.max(acc.maxTempoBox, step.tempoBox ?? 0);
+  }
+  if (node.type === "TempoStrip" && node.follows === "Stepper") acc.followerBoxes.push(node.segments.length);
   if (node.type === "Card") for (const child of node.children) measure(child, depth + 1, acc);
 }
 
@@ -158,10 +194,14 @@ export function validateHowTo(input: unknown): HowToResult {
   const parsed = HowToNodeSchema.safeParse(dropNullProps(value));
   if (!parsed.success) return { ok: false, error: parsed.error.issues.slice(0, 3).map(describeIssue).join("; ") };
 
-  const acc = { maxDepth: 0, nodes: 0, steppers: 0 };
+  const acc: Measure = { maxDepth: 0, nodes: 0, steppers: 0, maxTempoBox: 0, followerBoxes: [] };
   measure(parsed.data, 1, acc);
   if (acc.maxDepth > HOW_TO_LIMITS.maxDepth) return { ok: false, error: `deeper than ${HOW_TO_LIMITS.maxDepth} levels` };
   if (acc.nodes > HOW_TO_LIMITS.maxNodes) return { ok: false, error: `more than ${HOW_TO_LIMITS.maxNodes} nodes` };
   if (acc.steppers > 1) return { ok: false, error: "more than one Stepper" };
+  // A step's tempoBox must point at a real box of every TempoStrip that follows the Stepper.
+  const boxes = Math.min(...acc.followerBoxes);
+  if (acc.maxTempoBox > boxes)
+    return { ok: false, error: `a step has tempoBox ${acc.maxTempoBox} but the TempoStrip has ${boxes} boxes` };
   return { ok: true, tree: parsed.data };
 }

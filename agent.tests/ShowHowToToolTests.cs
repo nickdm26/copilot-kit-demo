@@ -61,6 +61,115 @@ public class ShowHowToToolTests
         Assert.Equal(ShowHowToTool.ShownResult, await Invoke(("ui", JsonNode.Parse(PauseSquat))));
     }
 
+    [Theory]
+    [InlineData("""{ "type": "PoseFigure", "lift": "deadlift", "pose": "bottom" }""")]
+    [InlineData("""{ "type": "PoseFigure", "lift": "curl", "pose": "half", "marker": "up" }""")]
+    [InlineData("""{ "type": "Stepper", "steps": [{ "title": "Lower", "cue": "Touch the chest.", "figure": { "lift": "bench", "pose": "bottom" } }] }""")]
+    public void Figures_for_other_lifts_pass(string json) => Assert.Empty(Validate(json));
+
+    [Theory]
+    [InlineData("""{ "type": "PoseFigure", "lift": "handstand", "pose": "stand" }""")]
+    [InlineData("""{ "type": "Stepper", "steps": [{ "title": "Pull", "cue": "Chin over.", "figure": { "lift": "pullup", "pose": "stand" } }] }""")]
+    public void Unknown_lift_fails(string json) =>
+        Assert.Contains(Validate(json), e => e.Contains("lift"));
+
+    [Fact]
+    public void Model_schema_offers_the_same_lifts()
+    {
+        var text = new ShowHowToTool(NullLogger<ShowHowToTool>.Instance).JsonSchema.GetRawText();
+        foreach (var lift in HowToValidator.Lifts) Assert.Contains($"\"{lift}\"", text);
+    }
+
+    // Same as sarahPauseSquatHowTo in web/src/components/declarative/fixtures.ts.
+    private const string SarahPauseSquat = """
+        {
+          "type": "Card",
+          "children": [
+            { "type": "Heading", "text": "Pause squat", "meta": "Tempo 3-2-X" },
+            { "type": "Stepper", "steps": [
+              { "title": "Set your stance", "cue": "Feet about shoulder width, toes turned out a little.", "figure": { "pose": "stand", "view": "front", "focus": "foot" } },
+              { "title": "Grip and brace", "cue": "Grip a little wider to ease the left shoulder. Big breath into your belly.", "figure": { "pose": "stand", "flag": { "part": "shoulder", "side": "left" } } },
+              { "title": "Lower for 3 seconds", "cue": "Sit down between your heels. Chest stays proud.", "figure": { "pose": "half", "marker": "down", "view": "side", "focus": "hip" }, "tempoBox": 1 },
+              { "title": "Knees out", "cue": "Knees track over the toes all the way down. Don't let them cave in.", "figure": { "pose": "bottom", "marker": "down", "view": "front", "focus": "knee" }, "tempoBox": 1 },
+              { "title": "Pause for 2 seconds", "cue": "Stay tight. No bounce. Back stays flat.", "figure": { "pose": "bottom", "marker": "hold", "view": "side", "focus": "back" }, "tempoBox": 2 },
+              { "title": "Drive up fast", "cue": "Chest and hips rise together.", "figure": { "pose": "half", "marker": "up" }, "tempoBox": 3 },
+              { "title": "Stand tall", "cue": "Squeeze the glutes at the top. Breathe, then go again.", "figure": { "pose": "stand", "view": "angle" } }
+            ] },
+            { "type": "TempoStrip", "segments": ["3s down", "2s pause", "Up fast"], "follows": "Stepper" },
+            { "type": "Callout", "tone": "flag", "text": "For Sarah: left shoulder. Wider grip, elbows down." }
+          ]
+        }
+        """;
+
+    private static string Steps(int count) =>
+        $$"""{ "type": "Stepper", "steps": [{{string.Join(",", Enumerable.Range(1, count).Select(i =>
+            $$"""{ "title": "Step {{i}}", "cue": "Keep going." }"""))}}] }""";
+
+    private static string TempoTree(string tempoBox) => $$"""
+        { "type": "Card", "children": [
+          { "type": "Stepper", "steps": [{ "title": "Lower", "cue": "Slowly.", "tempoBox": {{tempoBox}} }] },
+          { "type": "TempoStrip", "segments": ["3s down", "2s pause", "Up fast"], "follows": "Stepper" }
+        ] }
+        """;
+
+    [Fact]
+    public void Seven_step_example_with_views_focus_flag_and_tempo_boxes_passes() => Assert.Empty(Validate(SarahPauseSquat));
+
+    [Theory]
+    [InlineData("""{ "type": "PoseFigure", "pose": "half", "view": "front" }""")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "half", "view": "angle", "focus": "knee" }""")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "bottom", "flag": { "part": "shoulder", "side": "left" } }""")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "bottom", "flag": { "part": "back" } }""")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "bottom", "flag": { "part": "knee", "side": null } }""")]
+    [InlineData("""{ "type": "Stepper", "steps": [{ "title": "Lower", "cue": "Slowly.", "figure": { "pose": "half", "view": "side", "focus": "back" } }] }""")]
+    public void Views_focus_and_flags_pass(string json) => Assert.Empty(Validate(json));
+
+    [Theory]
+    [InlineData("""{ "type": "PoseFigure", "pose": "half", "view": "top" }""", "view")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "half", "focus": "spleen" }""", "focus")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "half", "flag": { "part": "shoulder", "side": "both" } }""", "side")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "half", "flag": { "side": "left" } }""", "part")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "half", "flag": { "part": "shoulder", "colour": "red" } }""", "colour")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "half", "flag": "left shoulder" }""", "flag")]
+    [InlineData("""{ "type": "PoseFigure", "pose": "half", "camera": { "yaw": 30 } }""", "camera")]
+    [InlineData("""{ "type": "Stepper", "steps": [{ "title": "Lower", "cue": "Slowly.", "figure": { "pose": "half", "view": "top" } }] }""", "view")]
+    public void Bad_views_focus_and_flags_fail(string json, string mentions) =>
+        Assert.Contains(Validate(json), e => e.Contains(mentions));
+
+    [Fact]
+    public void Up_to_8_steps_pass()
+    {
+        Assert.Empty(Validate(Steps(HowToValidator.MaxSteps)));
+        Assert.Contains(Validate(Steps(HowToValidator.MaxSteps + 1)), e => e.Contains("steps"));
+    }
+
+    [Theory]
+    [InlineData("3")]
+    [InlineData("2.0")]
+    public void Tempo_box_in_range_passes(string tempoBox) => Assert.Empty(Validate(TempoTree(tempoBox)));
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("7")]
+    [InlineData("1.5")]
+    [InlineData("\"1\"")]
+    public void Tempo_box_that_is_not_a_whole_number_from_1_to_6_fails(string tempoBox) =>
+        Assert.Contains(Validate(TempoTree(tempoBox)), e => e.Contains("tempoBox"));
+
+    [Fact]
+    public void Tempo_box_past_the_last_TempoStrip_box_fails() =>
+        Assert.Contains(Validate(TempoTree("4")), e => e.Contains("tempoBox 4 but the TempoStrip has 3 boxes"));
+
+    [Fact]
+    public void Model_schema_offers_views_body_parts_sides_and_tempo_box()
+    {
+        var text = new ShowHowToTool(NullLogger<ShowHowToTool>.Instance).JsonSchema.GetRawText();
+        foreach (var value in HowToValidator.Views.Concat(HowToValidator.BodyParts).Concat(HowToValidator.Sides))
+            Assert.Contains($"\"{value}\"", text);
+        Assert.Contains("\"tempoBox\"", text);
+        Assert.Contains("\"flag\"", text);
+    }
+
     [Fact]
     public void Script_type_fails()
     {

@@ -14,7 +14,17 @@ function renderNode(node: HowToNode, key: number) {
     case "Stepper":
       return <Stepper key={key} steps={node.steps} />;
     case "PoseFigure":
-      return <PoseFigure key={key} pose={node.pose} marker={node.marker} />;
+      return (
+        <PoseFigure
+          key={key}
+          lift={node.lift}
+          pose={node.pose}
+          marker={node.marker}
+          view={node.view}
+          focus={node.focus}
+          flag={node.flag}
+        />
+      );
     case "TempoStrip":
       return <TempoStrip key={key} segments={node.segments} follows={node.follows} />;
     case "Callout":
@@ -68,7 +78,7 @@ export function HowToCard({ ui, state }: HowToCardProps) {
             <Bar w="w-1/2" />
           </CatalogCard>
         ) : result.ok ? (
-          <StepProvider>{renderNode(result.tree, 0)}</StepProvider>
+          <StepProvider tempoBoxes={tempoBoxes(result.tree)}>{renderNode(result.tree, 0)}</StepProvider>
         ) : (
           <p className="rounded-sm border border-dashed border-border p-2.5 text-xs text-ink-muted" role="note">
             This how-to couldn't be shown because it didn't match the catalog. Nothing from it was rendered.
@@ -77,6 +87,18 @@ export function HowToCard({ ui, state }: HowToCardProps) {
       </div>
     </section>
   );
+}
+
+/** Each step's tempoBox, or undefined when the Stepper sets none (the TempoStrip then goes by position). */
+function tempoBoxes(node: HowToNode): (number | undefined)[] | undefined {
+  if (node.type === "Stepper")
+    return node.steps.some((s) => s.tempoBox !== undefined) ? node.steps.map((s) => s.tempoBox) : undefined;
+  if (node.type === "Card")
+    for (const child of node.children) {
+      const found = tempoBoxes(child);
+      if (found) return found;
+    }
+  return undefined;
 }
 
 function headingText(card: Extract<HowToNode, { type: "Card" }>): string | undefined {

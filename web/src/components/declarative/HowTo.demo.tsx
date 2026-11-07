@@ -3,12 +3,23 @@
 
 import { useState } from "react";
 import { Button } from "../ui";
+import { PoseFigure } from "./catalog";
 import { HowToCard } from "./HowToCard";
-import { gobletSquatHowTo, pauseSquatHowTo, scriptNode } from "./fixtures";
+import {
+  GALLERY_VIEWS,
+  LIFT_GALLERY,
+  gobletSquatHowTo,
+  pauseSquatHowTo,
+  romanianDeadliftHowTo,
+  sarahPauseSquatHowTo,
+  scriptNode,
+} from "./fixtures";
 
 const STATES = [
   { title: "Pause squat (plan example)", ui: pauseSquatHowTo, state: "done" as const },
+  { title: "Seven steps, views, focus, flag", ui: sarahPauseSquatHowTo, state: "done" as const },
   { title: "Every catalog part", ui: gobletSquatHowTo, state: "done" as const },
+  { title: "Another lift (deadlift figures)", ui: romanianDeadliftHowTo, state: "done" as const },
   { title: "Streaming", ui: undefined, state: "streaming" as const },
   { title: 'Rejected ("type": "Script")', ui: scriptNode, state: "done" as const },
 ];
@@ -34,7 +45,7 @@ export default function HowToDemo() {
           <div key={s.title} className="flex flex-col gap-2">
             <h2 className="font-heading text-base uppercase tracking-wide text-ink-muted">{s.title}</h2>
             {/* 360px is the narrowest phone; 400px is the desktop chat pane. */}
-            <div className="w-[360px] rounded-lg border border-border bg-surface p-4">
+            <div className="w-[360px] rounded-lg border border-border bg-surface p-4" data-testid={`howto-${s.title}`}>
               <HowToCard ui={s.ui} state={s.state} />
             </div>
           </div>
@@ -45,6 +56,29 @@ export default function HowToDemo() {
             <HowToCard ui={pauseSquatHowTo} state="done" />
           </div>
         </div>
+      </div>
+      <h2 className="mt-8 mb-3 font-heading text-base uppercase tracking-wide text-ink-muted">
+        Every lift, pose and view
+      </h2>
+      <div className="grid grid-cols-9 gap-2" style={{ maxWidth: 1400 }} data-testid="lift-gallery">
+        {LIFT_GALLERY.flatMap(({ lift, poses }) =>
+          GALLERY_VIEWS.flatMap((view) =>
+            poses.map((pose) => (
+              <figure key={`${lift}-${view}-${pose}`} className="flex flex-col gap-1">
+                <PoseFigure
+                  lift={lift}
+                  pose={pose}
+                  view={view}
+                  marker={pose === "half" ? "down" : undefined}
+                  controls={false}
+                />
+                <figcaption className="text-xs text-ink-muted">
+                  {lift} · {pose} · {view}
+                </figcaption>
+              </figure>
+            )),
+          ),
+        )}
       </div>
     </div>
   );
