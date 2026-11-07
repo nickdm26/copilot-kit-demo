@@ -60,7 +60,7 @@ public sealed class OpenRouterChatClientFactory(
             return ReplayChatClient.Load(r.Path, TimeSpan.FromMilliseconds(r.TextDelayMs), TimeSpan.FromMilliseconds(r.CallDelayMs))
                 .AsBuilder()
                 .UseOpenTelemetry(loggerFactory, TelemetrySource, c => c.EnableSensitiveData = telemetry.Value.CaptureContent)
-                .Use((inner, _) => new TelemetryEnrichingChatClient(inner))
+                .Use((inner, _) => new TelemetryEnrichingChatClient(inner, telemetry.Value.CaptureContent))
                 .Build();
         }
 
@@ -88,7 +88,7 @@ public sealed class OpenRouterChatClientFactory(
         return chat
             .AsBuilder()
             .UseOpenTelemetry(loggerFactory, TelemetrySource, c => c.EnableSensitiveData = telemetry.Value.CaptureContent)
-            .Use((inner, _) => new TelemetryEnrichingChatClient(inner))
+            .Use((inner, _) => new TelemetryEnrichingChatClient(inner, telemetry.Value.CaptureContent))
             .Build();
     }
 }

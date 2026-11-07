@@ -1,6 +1,5 @@
-import { useCallback } from "react";
-import { useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
 import { useSession } from "../../lib/session";
+import { useSendUserMessage } from "./useSendUserMessage";
 import { SuggestionChips, type SuggestionChipItem } from "./SuggestionChips";
 
 const DEFAULT_SUGGESTIONS: SuggestionChipItem[] = [
@@ -23,20 +22,6 @@ export function ConnectedSuggestionChips() {
 }
 
 function BoundChips({ agentId }: { agentId: string }) {
-  const { agent } = useAgent({ agentId });
-  const { copilotkit } = useCopilotKit();
-
-  const handlePick = useCallback(
-    (label: string) => {
-      agent.addMessage({
-        id: crypto.randomUUID(),
-        role: "user",
-        content: label,
-      });
-      void copilotkit.runAgent({ agent });
-    },
-    [agent, copilotkit],
-  );
-
-  return <SuggestionChips suggestions={DEFAULT_SUGGESTIONS} onPick={handlePick} />;
+  const send = useSendUserMessage(agentId);
+  return <SuggestionChips suggestions={DEFAULT_SUGGESTIONS} onPick={send} />;
 }

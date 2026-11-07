@@ -10,9 +10,10 @@ namespace PtCoach.Agent.Telemetry;
 /// <summary>
 /// A <see cref="DelegatingChatClient"/> that enriches OpenTelemetry spans with PT Coach-specific events:
 /// approval proposals and decisions, program cell changes, and error recording.
-/// Does not capture prompt or response text (privacy).
+/// Does not capture prompt or response text, or a swap's free-text reason (it can name an injury),
+/// unless <paramref name="captureContent"/> is on (<see cref="TelemetryOptions.CaptureContent"/>, off by default).
 /// </summary>
-public sealed class TelemetryEnrichingChatClient(IChatClient inner) : DelegatingChatClient(inner)
+public sealed class TelemetryEnrichingChatClient(IChatClient inner, bool captureContent = false) : DelegatingChatClient(inner)
 {
     // One client serves every run for its model, so runs can touch this set at the same time.
     private readonly ConcurrentDictionary<string, byte> _proposeSwapCallIds = new();
@@ -34,8 +35,23 @@ public sealed class TelemetryEnrichingChatClient(IChatClient inner) : Delegating
             }
         }
 
-        await foreach (var update in base.GetStreamingResponseAsync(messages, options, cancellationToken))
+        // Enumerate by hand: C# can't yield inside a try with a catch, and errors (e.g. OpenRouter timeouts) surface here.
+        await using var updates = base.GetStreamingResponseAsync(messages, options, cancellationToken)
+            .GetAsyncEnumerator(cancellationToken);
+        while (true)
         {
+            ChatResponseUpdate update;
+            try
+            {
+                if (!await updates.MoveNextAsync()) break;
+                update = updates.Current;
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
+            {
+                RecordError(ex);
+                throw;
+            }
+
             foreach (var content in update.Contents)
             {
                 if (content is FunctionCallContent fcc && fcc.Name == ToolNames.ProposeSwap)
@@ -83,28 +99,28 @@ public sealed class TelemetryEnrichingChatClient(IChatClient inner) : Delegating
             }
             return response;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (!(ex is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             RecordError(ex);
             throw;
         }
     }
 
-    private static void RecordApprovalProposed(FunctionCallContent call)
+    private void RecordApprovalProposed(FunctionCallContent call)
     {
         var activity = Activity.Current;
         if (activity is null) return;
 
         var args = call.Arguments;
-        activity.AddEvent(new ActivityEvent(
-            AgentTelemetry.EventApprovalProposed,
-            tags: new ActivityTagsCollection
-            {
-                [AgentTelemetry.AttrApprovalTool] = ToolNames.ProposeSwap,
-                [AgentTelemetry.AttrApprovalFromExercise] = GetStringArg(args, "fromExerciseId"),
-                [AgentTelemetry.AttrApprovalToExercise] = GetStringArg(args, "toExerciseId"),
-                [AgentTelemetry.AttrApprovalReason] = GetStringArg(args, "reason"),
-            }));
+        var tags = new ActivityTagsCollection
+        {
+            [AgentTelemetry.AttrApprovalTool] = ToolNames.ProposeSwap,
+            [AgentTelemetry.AttrApprovalFromExercise] = GetStringArg(args, "fromExerciseId"),
+            [AgentTelemetry.AttrApprovalToExercise] = GetStringArg(args, "toExerciseId"),
+        };
+        // The reason is model-written text such as "left shoulder impingement": health data, so opt-in only.
+        if (captureContent) tags[AgentTelemetry.AttrApprovalReason] = GetStringArg(args, "reason");
+        activity.AddEvent(new ActivityEvent(AgentTelemetry.EventApprovalProposed, tags: tags));
     }
 
     private static void RecordApprovalDecision(FunctionResultContent result)

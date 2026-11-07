@@ -22,6 +22,8 @@ import { useProgramState } from "./useProgramState";
 import { computeWeekVolume } from "./weekVolume";
 import { Card } from "../ui";
 import { useHowToTool } from "../declarative";
+import { useSendUserMessage } from "../agent/useSendUserMessage";
+import { useSession } from "../../lib/session";
 
 function WeekSummaryTool({ args, streaming }: { args: { week?: number | string; note?: string }; streaming: boolean }) {
   const program = useProgramState();
@@ -125,12 +127,11 @@ function ProposeChangesTool(props: {
     void respond(out);
   };
 
-  const handleSuggest = (text: string) => {
-    if (!respond) return;
-    // Reject the proposal so the agent gets a turn back
-    const out: ProposeChangesResult = { approved: false };
-    void respond(out);
-  };
+  // The chips show only once the proposal is rejected, when respond() has already been used.
+  // So the chip text goes to the agent as a new trainer message (sent after any run in progress).
+  const { modelKey } = useSession();
+  const send = useSendUserMessage(modelKey);
+  const handleSuggest = (text: string) => send(valid ? `${text} for week ${valid.week}` : text);
 
   return (
     <ProgramDiffCard
