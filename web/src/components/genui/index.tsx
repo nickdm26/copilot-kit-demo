@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFrontendTool, useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import {
   ProposeSwapArgsSchema,
@@ -44,12 +44,23 @@ function SwapTool(props: {
     state = approved ? "approved" : "rejected";
   } else state = status === "executing" ? "pending" : "streaming";
 
+  // Some models occasionally send a proposeSwap with empty args. There is nothing to approve, but the run waits
+  // for an answer, so decline it once and show nothing.
+  const empty = status === "executing" && (!args.fromExerciseId || !args.toExerciseId);
+  const declined = useRef(false);
+  useEffect(() => {
+    if (!empty || !respond || declined.current) return;
+    declined.current = true;
+    void respond({ approved: false, fromExerciseId: "", toExerciseId: "" });
+  }, [empty, respond]);
+
   const onAnswer = (approved: boolean) => {
     if (!respond || !args.fromExerciseId || !args.toExerciseId) return;
     setAnswer(approved);
     const out: ProposeSwapResult = { approved, fromExerciseId: args.fromExerciseId, toExerciseId: args.toExerciseId };
     void respond(out);
   };
+  if (empty || (status === "complete" && !args.fromExerciseId)) return null;
   return <SwapApproval args={args} state={state} onAnswer={onAnswer} />;
 }
 

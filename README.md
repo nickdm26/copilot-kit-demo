@@ -75,6 +75,8 @@ The dropdown shows `{label} ({modelId})`. The `replay` key is reserved for the o
 
 Pick **Replay** in the dropdown. It plays back a recorded good run from `agent/Replay/demo-run.json` with no network and no key, as long as you follow the demo script in order.
 
+The recording only has the Approve branch: on Replay, tap **Approve** (Reject still shows "Rejected", but the recording carries on as if approved). The swap card appears before the grid fills, so the red flag highlight does not show on Replay.
+
 To record a new run:
 
 1. Set a folder to record into: `dotnet user-secrets set "Replay:RecordDirectory" "<folder>" --project agent`
@@ -88,7 +90,7 @@ To record a new run:
 - **Unit and integration (xUnit)**: stop Aspire first (`aspire stop`), since it locks the agent's files. Then run:
 
   ```powershell
-  dotnet test agent.tests
+  dotnet test
   ```
 
 - **End to end (Playwright)**: with the app running (`aspire run`), point the test at the web URL and run it:
@@ -101,7 +103,7 @@ To record a new run:
 
 ## Observability
 
-One chat message is one trace in the Aspire dashboard: runtime, then agent, then the model call.
+Each agent run is one trace in the Aspire dashboard, from the runtime through the agent to the model call. One chat message can start several runs, because the agent keeps going after a card or a swap answer.
 
 ## Repo layout
 

@@ -19,7 +19,7 @@ It shows off CopilotKit + AG-UI with a .NET 10 Microsoft Agent Framework agent. 
 
 ```powershell
 aspire run                      # start agent, runtime and web together (from repo root)
-dotnet test agent.tests         # xUnit
+dotnet test                     # xUnit (from the repo root; stop Aspire first)
 yarn install                    # web + runtime workspaces
 yarn workspace web dev          # web alone (needs RUNTIME_URL and AGENT_URL)
 npx playwright test             # e2e demo script (Phase 3, against the replay model)

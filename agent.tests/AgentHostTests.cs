@@ -77,6 +77,11 @@ public class AgentHostTests
         Assert.Equal("test/quick-model", quick.ModelId);
         Assert.Contains(models, m => m.Key == "thorough" && m.ModelId == "test/thorough-model");
         Assert.All(models, m => Assert.False(string.IsNullOrWhiteSpace(m.ModelId)));
+
+        // appsettings.json order first (not alphabetical), then keys set only elsewhere.
+        using var file = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "appsettings.json")));
+        var fileOrder = file.RootElement.GetProperty("Models").EnumerateObject().Select(p => p.Name).ToList();
+        Assert.Equal(fileOrder, models.Select(m => m.Key).Take(fileOrder.Count));
     }
 
     [Fact]

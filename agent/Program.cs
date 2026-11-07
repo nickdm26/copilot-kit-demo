@@ -12,9 +12,16 @@ builder.Services.AddAGUIServer(); // AG-UI JSON types; without it tool-call args
 builder.Services.Configure<OpenRouterOptions>(builder.Configuration.GetSection("OpenRouter"));
 builder.Services.Configure<ReplayOptions>(builder.Configuration.GetSection("Replay"));
 
-// Models allowlist, kept in config order.
+// Models allowlist, kept in config order. .NET configuration sorts child keys, so take the order from
+// appsettings.json itself; keys only set elsewhere (tests, env vars) go last.
+var appsettingsPath = Path.Combine(builder.Environment.ContentRootPath, "appsettings.json");
+var fileOrder = File.Exists(appsettingsPath)
+    && System.Text.Json.JsonDocument.Parse(File.ReadAllText(appsettingsPath)).RootElement.TryGetProperty("Models", out var modelsJson)
+    ? modelsJson.EnumerateObject().Select(p => p.Name).ToList()
+    : [];
 var models = new ModelsOptions();
-foreach (var section in builder.Configuration.GetSection("Models").GetChildren())
+foreach (var section in builder.Configuration.GetSection("Models").GetChildren()
+    .OrderBy(s => fileOrder.IndexOf(s.Key) is var i && i >= 0 ? i : int.MaxValue))
 {
     var label = section["Label"] ?? section["label"];
     var modelId = section["ModelId"] ?? section["modelId"];
