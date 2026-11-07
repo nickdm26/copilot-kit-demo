@@ -7,10 +7,14 @@ import {
   TEST_IDS,
   type Day,
   type ExerciseEntry,
+  type ProgramState,
   type WeekDay,
 } from "../../lib/contracts";
 import { useSession } from "../../lib/session";
 import { Badge, Card, cx } from "../ui";
+import { MobileDayView, PendingChangesBanner, type DayViewDay } from "../program";
+import { usePendingApprovals } from "../agent/pendingApprovals";
+import { useMobileNav } from "../../layouts/mobileNav";
 import { cellKey, editCell, moveDayContent, type CellField } from "./applyUpdate";
 import { useProgramState } from "./useProgramState";
 
@@ -19,15 +23,50 @@ const nameOf = (id: string) => exerciseNames.get(id) ?? id;
 
 const DRAG_TYPE = "application/x-pt-day";
 
-/** The program grid: one row per exercise slot, one column per day of the selected week, a week switcher on top. */
-export default function ProgramGrid() {
-  const { modelKey, threadId, clientId } = useSession();
-  // useAgent needs a real agent id; the model list loads first.
-  if (!modelKey) return <GridFrame week={null}><EmptyState text="Loading models..." /></GridFrame>;
-  return <BoundGrid key={modelKey} agentId={modelKey} threadId={threadId} clientId={clientId} />;
+const GOAL_LABELS: Record<ProgramState["goal"], string> = {
+  strength: "Strength",
+  hypertrophy: "Hypertrophy",
+  general: "General",
+  "endurance-support": "Endurance support",
+};
+
+export interface ProgramGridProps {
+  /** "table": every day of the week side by side (desktop). "day": one day at a time as cards (phone). */
+  variant?: "table" | "day";
+  className?: string;
 }
 
-function BoundGrid({ agentId, threadId, clientId }: { agentId: string; threadId: string; clientId: string }) {
+/** The program: the selected week's days with editable cells, a week switcher on top. */
+export default function ProgramGrid({ variant = "table", className }: ProgramGridProps) {
+  const { modelKey, threadId, clientId } = useSession();
+  // useAgent needs a real agent id; the model list loads first.
+  if (!modelKey)
+    return (
+      <GridFrame week={null} title="Program" className={className}>
+        <EmptyState text="Loading models..." />
+      </GridFrame>
+    );
+  return (
+    <BoundGrid
+      key={modelKey}
+      agentId={modelKey}
+      threadId={threadId}
+      clientId={clientId}
+      variant={variant}
+      className={className}
+    />
+  );
+}
+
+interface BoundGridProps {
+  agentId: string;
+  threadId: string;
+  clientId: string;
+  variant: "table" | "day";
+  className?: string;
+}
+
+function BoundGrid({ agentId, threadId, clientId, variant, className }: BoundGridProps) {
   const { program, setProgram, touched, isRunning } = useProgramState(agentId, threadId, clientId);
   const weekNumbers = program.weeks.map((w) => w.week);
   const [selected, setSelected] = useState<number | null>(null);
@@ -38,9 +77,18 @@ function BoundGrid({ agentId, threadId, clientId }: { agentId: string; threadId:
   const days = program.weeks.find((w) => w.week === week)?.days ?? [];
   const touchedWeeks = useMemo(() => new Set([...touched.keys()].map((k) => Number(k.split("|")[0]))), [touched]);
 
+  const title =
+    weekNumbers.length > 0
+      ? `${GOAL_LABELS[program.goal]} block · ${weekNumbers.length} ${weekNumbers.length === 1 ? "week" : "weeks"}`
+      : "Program";
+  const onEdit: WeekTableProps["onEdit"] = (day, index, field, value) => {
+    if (week !== null) setProgram(editCell(program, week, day, index, field, value));
+  };
+
   if (week === null) {
     return (
-      <GridFrame week={null}>
+      <GridFrame week={null} title={title} className={className}>
+        {variant === "day" ? <MobilePendingBanner className="mb-3" /> : null}
         <EmptyState
           text={
             isRunning
@@ -52,49 +100,186 @@ function BoundGrid({ agentId, threadId, clientId }: { agentId: string; threadId:
     );
   }
 
+  if (variant === "day") {
+    return (
+      <section data-testid={TEST_IDS.programGrid} data-week={week} className={cx("min-w-0", className)}>
+        <DayView
+          week={week}
+          weekNumbers={weekNumbers}
+          days={days}
+          flags={flags}
+          touched={touched}
+          goal={GOAL_LABELS[program.goal]}
+          onWeekChange={setSelected}
+          onEdit={onEdit}
+        />
+      </section>
+    );
+  }
+
+  const weekTabs = (
+    <div className="flex flex-wrap gap-1" role="tablist" aria-label="Weeks">
+      {weekNumbers.map((n) => (
+        <button
+          key={n}
+          type="button"
+          role="tab"
+          data-testid={TEST_IDS.weekTab}
+          data-week={n}
+          aria-selected={n === week}
+          onClick={() => setSelected(n)}
+          className={cx(
+            "relative h-8 px-2.5 rounded-sm border text-[13px] cursor-pointer tabular transition-colors",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+            n === week
+              ? "bg-ink border-ink text-surface font-semibold"
+              : "bg-surface border-border text-ink-muted hover:text-ink",
+          )}
+        >
+          Wk {n}
+          {touchedWeeks.has(n) && n !== week ? (
+            <>
+              <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-accent" />
+              <span className="sr-only"> (updated)</span>
+            </>
+          ) : null}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <GridFrame week={week}>
-      <div className="flex items-center gap-1 sm:gap-2 mb-3 flex-wrap" role="tablist" aria-label="Weeks">
-        {weekNumbers.map((n) => (
-          <button
-            key={n}
-            type="button"
-            role="tab"
-            data-testid={TEST_IDS.weekTab}
-            data-week={n}
-            aria-selected={n === week}
-            onClick={() => setSelected(n)}
-            className={cx(
-                    "h-7 sm:h-8 px-2 sm:px-3 rounded-md border text-xs sm:text-sm font-medium cursor-pointer tabular transition-colors",
-              n === week ? "bg-accent-tint border-accent text-ink" : "bg-surface border-border text-ink-muted hover:text-ink",
-            )}
-          >
-                  {n}
-            {touchedWeeks.has(n) && n !== week ? <span className="ml-1 text-accent" aria-label="updated">•</span> : null}
-          </button>
-        ))}
-        <span className="ml-auto text-xs text-ink-muted">
-          {isRunning ? "Coach is writing..." : "Edit sets, reps or RPE. Drag a day header to swap days."}
-        </span>
-      </div>
+    <GridFrame week={week} title={title} actions={weekTabs} className={className}>
       <WeekTable
         week={week}
         days={days}
         flags={flags}
         touched={touched}
-        onEdit={(day, index, field, value) => setProgram(editCell(program, week, day, index, field, value))}
+        onEdit={onEdit}
         onMove={(from, to) => setProgram(moveDayContent(program, week, from, to))}
       />
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-muted">
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="h-3.5 w-3.5 rounded-[4px] border border-accent bg-accent-tint" />
+          Agent edit, fades after 2s
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-flag" />
+          Flag, needs coach review
+        </span>
+        <span className="ml-auto">
+          {isRunning ? "Coach is writing..." : "Edit sets, reps or RPE. Drag a day header to swap days."}
+        </span>
+      </div>
     </GridFrame>
   );
 }
 
-function GridFrame({ week, children }: { week: number | null; children: React.ReactNode }) {
+function GridFrame({
+  week,
+  title,
+  actions,
+  className,
+  children,
+}: {
+  week: number | null;
+  title: string;
+  actions?: React.ReactNode;
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <section data-testid={TEST_IDS.programGrid} data-week={week ?? ""} className="p-3 sm:p-4 min-w-0 min-h-0 overflow-y-auto overscroll-contain">
-      <h2 className="font-heading text-lg sm:text-xl uppercase tracking-wide mb-2 sm:mb-3">Program</h2>
-      {children}
+    <section
+      data-testid={TEST_IDS.programGrid}
+      data-week={week ?? ""}
+      className={cx("flex min-w-0 min-h-0 flex-col gap-3.5 p-4 overflow-y-auto overscroll-contain", className)}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-heading text-2xl uppercase tracking-wide leading-tight">{title}</h2>
+        {actions}
+      </div>
+      <div>{children}</div>
     </section>
+  );
+}
+
+/* ---------- Phone: one day at a time ---------- */
+
+/** "Coach agent proposed N changes" while an approval card waits; tapping it opens the Coach tab. */
+function MobilePendingBanner({ className }: { className?: string }) {
+  const pending = usePendingApprovals();
+  const goTo = useMobileNav();
+  const count = pending.reduce((n, p) => n + p.count, 0);
+  return count > 0 ? <PendingChangesBanner count={count} onReview={() => goTo("coach")} className={className} /> : null;
+}
+
+interface DayViewProps {
+  week: number;
+  weekNumbers: number[];
+  days: Day[];
+  flags: ReadonlyMap<string, string>;
+  touched: ReadonlyMap<string, number>;
+  goal: string;
+  onWeekChange: (week: number) => void;
+  onEdit: WeekTableProps["onEdit"];
+}
+
+function DayView({ week, weekNumbers, days, flags, touched, goal, onWeekChange, onEdit }: DayViewProps) {
+  const { clients, clientId } = useSession();
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  const viewDays: DayViewDay[] = days.map((d) => ({
+    value: d.day,
+    label: d.focus ? `${d.day} · ${d.focus}` : d.day,
+    exercises: d.exercises.map((entry, index) => {
+      const gen = touched.get(cellKey(week, d.day, index));
+      const flagReason = flags.get(entry.exerciseId);
+      return {
+        // A new highlight generation remounts the card so the fade restarts.
+        key: `${index}-${gen ?? 0}`,
+        slot: String(index + 1),
+        name: nameOf(entry.exerciseId),
+        prescription: `${entry.sets} x ${entry.reps} @ RPE ${entry.rpe}`,
+        flagReason,
+        agentEdited: gen !== undefined,
+        cardProps: {
+          "data-testid": TEST_IDS.gridCell,
+          "data-week": String(week),
+          "data-day": d.day,
+          "data-index": String(index),
+          "data-exercise-id": entry.exerciseId,
+          "data-flagged": flagReason !== undefined ? "true" : "false",
+          "data-agent-touched": gen !== undefined ? "true" : "false",
+        },
+        editor: (
+          <div className="flex items-center gap-1 text-sm">
+            <NumberField label="Sets" field="sets" value={entry.sets} width="w-11" onCommit={(v) => onEdit(d.day, index, "sets", v)} />
+            <span className="text-ink-muted">x</span>
+            <RepsField value={entry.reps} onCommit={(v) => onEdit(d.day, index, "reps", v)} />
+            <span className="text-ink-muted">@ RPE</span>
+            <NumberField label="RPE" field="rpe" value={entry.rpe} width="w-12" onCommit={(v) => onEdit(d.day, index, "rpe", v)} />
+          </div>
+        ),
+      };
+    }),
+  }));
+
+  return (
+    <MobileDayView
+      eyebrow={`${goal} block · Wk ${week} of ${weekNumbers.length}`}
+      title={clients.find((c) => c.id === clientId)?.name ?? ""}
+      weeks={weekNumbers.map((n) => ({
+        value: n,
+        label: `Wk ${n}`,
+        optionProps: { "data-testid": TEST_IDS.weekTab, "data-week": String(n), "aria-selected": n === week },
+      }))}
+      selectedWeek={week}
+      onWeekChange={onWeekChange}
+      days={viewDays}
+      selectedDay={selectedDay ?? days[0]?.day ?? ""}
+      onDayChange={setSelectedDay}
+      banner={<MobilePendingBanner />}
+    />
   );
 }
 
@@ -164,8 +349,10 @@ function WeekTable({ week, days, flags, touched, onEdit, onMove }: WeekTableProp
             dragOver === d.day && "bg-accent-tint",
           )}
         >
-          <div className="font-heading text-lg uppercase leading-5">{d.day}</div>
-          <div className="text-xs text-ink-muted truncate">{d.focus || " "}</div>
+          <div className="font-heading text-[15px] uppercase tracking-wide text-ink-muted truncate">
+            {d.day}
+            {d.focus ? ` · ${d.focus}` : ""}
+          </div>
         </div>
       ))}
 
@@ -228,7 +415,6 @@ function Cell({ week, day, index, entry, flagReason, touched, onEdit }: CellProp
       title={flagged ? `Flagged: ${flagReason}` : entry.note || undefined}
       className={cx(
         "px-3 py-2 border-t border-l border-border min-w-0",
-        flagged && "bg-flag-tint border-l-flag",
         touched && "agent-touched",
       )}
     >
@@ -236,13 +422,7 @@ function Cell({ week, day, index, entry, flagReason, touched, onEdit }: CellProp
         <span className="text-sm font-medium leading-5 truncate" title={nameOf(entry.exerciseId)}>
           {nameOf(entry.exerciseId)}
         </span>
-        {flagged ? (
-          <Badge tone="flag" className="ml-auto shrink-0" title={flagReason}>
-            Flag
-          </Badge>
-        ) : null}
       </div>
-      {flagged ? <div className="text-xs text-flag truncate">{flagReason}</div> : null}
       <div className="mt-1 flex items-center gap-1 text-sm">
         <NumberField label="Sets" field="sets" value={entry.sets} width="w-9" onCommit={(v) => onEdit(day, index, "sets", v)} />
         <span className="text-ink-muted">x</span>
@@ -250,6 +430,11 @@ function Cell({ week, day, index, entry, flagReason, touched, onEdit }: CellProp
         <span className="text-ink-muted">@</span>
         <NumberField label="RPE" field="rpe" value={entry.rpe} width="w-11" onCommit={(v) => onEdit(day, index, "rpe", v)} />
       </div>
+      {flagged ? (
+        <Badge tone="flag" className="mt-1.5 max-w-full" title={`Flagged: ${flagReason}`}>
+          <span className="truncate">{flagReason}</span>
+        </Badge>
+      ) : null}
     </div>
   );
 }

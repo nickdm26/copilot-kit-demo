@@ -16,8 +16,8 @@
   --radius: 10px;
   --space: 4px;
 
-  /* Text colour placed on top of an accent / flag / ok fill. */
-  --on-fill: #ffffff;
+  /* Text colour placed on top of an accent / flag / ok fill. Ink, not white: white on orange fails contrast. */
+  --on-fill: #1a1a1a;
   color-scheme: light;
 }
 
@@ -153,6 +153,35 @@
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   box-shadow: none;
+}
+
+/* Chat messages: 14px text in our ink, like the rest of the app (CopilotKit's prose defaults to 16px slate). */
+:root [data-copilotkit] .copilotKitMessage .cpk\:prose {
+  --tw-prose-body: var(--color-ink);
+  --tw-prose-headings: var(--color-ink);
+  --tw-prose-bold: var(--color-ink);
+  --tw-prose-links: var(--color-ink);
+  --tw-prose-code: var(--color-ink);
+  --tw-prose-bullets: var(--color-ink-muted);
+  --tw-prose-counters: var(--color-ink-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* The trainer's own message: an ink bubble with surface text, tail at the bottom right. */
+:root [data-copilotkit] .copilotKitUserMessage {
+  padding-top: 12px;
+}
+:root [data-copilotkit] .copilotKitUserMessage .cpk\:prose {
+  --tw-prose-body: var(--color-surface);
+  --tw-prose-bold: var(--color-surface);
+  --tw-prose-links: var(--color-surface);
+  --tw-prose-code: var(--color-surface);
+  background-color: var(--color-ink);
+  color: var(--color-surface);
+  max-width: 85%;
+  padding: 10px 12px;
+  border-radius: 14px 14px 4px 14px;
 }
 
 @layer utilities {

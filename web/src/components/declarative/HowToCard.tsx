@@ -56,7 +56,7 @@ export function HowToCard({ ui, state }: HowToCardProps) {
       aria-label={label ? `${label} how-to` : "How-to"}
       data-state={result ? (result.ok ? "done" : "invalid") : "streaming"}
     >
-      <Badge tone="ok">
+      <Badge tone="ok" dot={false}>
         <GridIcon />
         Declarative · built from your catalog
       </Badge>

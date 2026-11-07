@@ -18,16 +18,13 @@ export function SwapApproval({ args, state, onAnswer }: SwapApprovalProps) {
     <Card
       data-testid={TEST_IDS.swapApproval}
       data-state={state}
-      className={cx(
-        "my-2 flex flex-col gap-2",
-        state === "approved" && "border-ok bg-ok-tint",
-        state === "rejected" && "border-flag bg-flag-tint",
-      )}
+      className={cx("my-2 flex flex-col gap-2", state === "pending" && "border-accent!")}
     >
       <div className="flex items-center gap-2">
-        <h3 className="font-heading text-xl uppercase tracking-wide mr-auto">Swap proposal</h3>
+        <h3 className="font-heading text-lg uppercase tracking-wide mr-auto">Swap proposal</h3>
+        {state === "pending" ? <Badge tone="accent">Needs approval</Badge> : null}
         {state === "approved" ? <Badge tone="ok">Approved</Badge> : null}
-        {state === "rejected" ? <Badge tone="flag">Rejected</Badge> : null}
+        {state === "rejected" ? <Badge tone="neutral">Rejected</Badge> : null}
       </div>
       <p className="text-sm font-medium">
         <span>{nameOf(args.fromExerciseId)}</span> <span className="text-ink-muted">to</span>{" "}
@@ -39,26 +36,21 @@ export function SwapApproval({ args, state, onAnswer }: SwapApprovalProps) {
       ) : state === "streaming" ? (
         <div className="h-3 w-2/3 rounded-sm bg-border animate-pulse" />
       ) : null}
-      <div className="flex gap-2">
-        <Button
-          data-testid={TEST_IDS.swapApprove}
-          size="sm"
-          disabled={state !== "pending"}
-          onClick={() => onAnswer?.(true)}
-          className="bg-ok border-ok text-on-fill hover:bg-ok hover:border-ok"
-        >
-          Approve
-        </Button>
-        <Button
-          data-testid={TEST_IDS.swapReject}
-          size="sm"
-          variant="danger"
-          disabled={state !== "pending"}
-          onClick={() => onAnswer?.(false)}
-        >
-          Reject
-        </Button>
-      </div>
+      {state === "pending" || state === "streaming" ? (
+        <div className="flex gap-2">
+          <Button data-testid={TEST_IDS.swapApprove} disabled={state !== "pending"} onClick={() => onAnswer?.(true)}>
+            Approve
+          </Button>
+          <Button
+            data-testid={TEST_IDS.swapReject}
+            variant="danger"
+            disabled={state !== "pending"}
+            onClick={() => onAnswer?.(false)}
+          >
+            Reject
+          </Button>
+        </div>
+      ) : null}
     </Card>
   );
 }

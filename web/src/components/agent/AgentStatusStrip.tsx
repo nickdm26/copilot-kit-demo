@@ -8,6 +8,10 @@ export interface AgentStatusStripProps {
   steps?: { label: string; state: StepState }[];
   summary?: string;
   errorMessage?: string;
+  /** Idle text. Default "Ready." */
+  idleText?: string;
+  /** Done: the step list is open (the button then reads "Hide steps"). */
+  stepsOpen?: boolean;
   onShowSteps?: () => void;
   onRetry?: () => void;
   onSwitchModel?: () => void;
@@ -97,6 +101,26 @@ function activeStepIndex(steps?: { label: string; state: StepState }[]): number 
   return steps.findIndex((s) => s.state === "active");
 }
 
+/* ---- Step list ---- */
+
+function StepList({ steps, className }: { steps: { label: string; state: StepState }[]; className?: string }) {
+  return (
+    <ol className={cx("mt-1.5 flex flex-col gap-0.5 text-ink-muted", className)}>
+      {steps.map((step, i) => (
+        <li key={i} className={cx("flex items-center gap-2", step.state === "active" && "font-medium text-ink")}>
+          <span className="flex w-3.5 shrink-0 justify-center" aria-hidden="true">
+            {step.state === "done" && <CheckIcon className="h-3.5 w-3.5 text-ok" />}
+            {step.state === "active" && <DotIcon className="h-2 w-2 text-accent" />}
+            {step.state === "pending" && <OutlinedDotIcon className="h-2 w-2 text-ink-muted" />}
+          </span>
+          <span className="truncate">{step.label}</span>
+          <span className="sr-only">{step.state === "done" ? " (done)" : step.state === "active" ? " (in progress)" : ""}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 /* ---- Component ---- */
 
 export function AgentStatusStrip({
@@ -104,6 +128,8 @@ export function AgentStatusStrip({
   steps,
   summary,
   errorMessage,
+  idleText = "Ready.",
+  stepsOpen = false,
   onShowSteps,
   onRetry,
   onSwitchModel,
@@ -117,10 +143,10 @@ export function AgentStatusStrip({
     return (
       <div
         role="status"
-        className="flex items-center gap-2 px-4 py-2 text-sm text-ink-muted"
+        className="flex items-center gap-2 px-4 py-2 text-[13px] text-ink-muted"
       >
-        <DotIcon className="h-2 w-2 text-ink-muted" />
-        <span>Ready.</span>
+        <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full border border-ink-muted bg-border" />
+        <span className="truncate">{idleText}</span>
       </div>
     );
   }
@@ -130,48 +156,24 @@ export function AgentStatusStrip({
     return (
       <div
         role="status"
-        className="bg-accent-tint px-4 py-3"
+        className="bg-accent-tint/50 px-4 py-2.5 text-[13px]"
       >
         {/* Top row: spinner + label + step counter */}
         <div className="flex items-center gap-2">
           <SpinnerIcon className="h-4 w-4 text-accent shrink-0" />
-          <span className="font-medium text-sm text-ink truncate">
+          <span className="font-semibold text-ink truncate">
             {label ?? "Working…"}
           </span>
-          {totalSteps > 0 && (
-            <span className="ml-auto text-xs text-ink-muted tabular shrink-0">
-              Step {current + 1} of {totalSteps}
+          {current >= 0 && (
+            <span className="ml-auto text-ink-muted tabular shrink-0">
+              {/* Without pending steps the total isn't known yet. */}
+              {steps?.some((st) => st.state === "pending") ? `Step ${current + 1} of ${totalSteps}` : `Step ${current + 1}`}
             </span>
           )}
         </div>
 
         {/* Step list */}
-        {steps && steps.length > 0 && (
-          <ul className="mt-2 space-y-1">
-            {steps.map((step) => (
-              <li key={step.label} className="flex items-center gap-2 text-xs">
-                {step.state === "done" && (
-                  <CheckIcon className="h-3 w-3 text-ok shrink-0" />
-                )}
-                {step.state === "active" && (
-                  <DotIcon className="h-2 w-2 text-accent shrink-0" />
-                )}
-                {step.state === "pending" && (
-                  <OutlinedDotIcon className="h-2 w-2 text-ink-muted shrink-0" />
-                )}
-                <span
-                  className={cx(
-                    step.state === "active" && "font-semibold text-ink",
-                    step.state === "done" && "text-ink-muted",
-                    step.state === "pending" && "text-ink-muted",
-                  )}
-                >
-                  {step.label}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        {steps && steps.length > 0 && <StepList steps={steps} />}
       </div>
     );
   }
@@ -181,10 +183,10 @@ export function AgentStatusStrip({
     return (
       <div
         role="status"
-        className="bg-accent-tint flex items-center gap-2 px-4 py-3 text-sm"
+        className="bg-accent-tint/50 flex items-center gap-2 px-4 py-2.5 text-[13px]"
       >
-        <PauseIcon className="h-4 w-4 text-accent shrink-0" />
-        <span className="text-ink">Waiting for your approval</span>
+        <PauseIcon className="h-4 w-4 text-ink shrink-0" />
+        <span className="font-medium text-ink">Waiting for your approval</span>
       </div>
     );
   }
@@ -192,23 +194,24 @@ export function AgentStatusStrip({
   /* --- done --- */
   if (status === "done") {
     return (
-      <div
-        role="status"
-        className="bg-ok-tint flex items-center gap-2 px-4 py-3 text-sm"
-      >
-        <CheckIcon className="h-4 w-4 text-ok shrink-0" />
-        <span className="font-medium text-ink">Done</span>
-        {summary && <span className="text-ink-muted">{summary}</span>}
-        {onShowSteps && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onShowSteps}
-            className="ml-auto"
-          >
-            Show steps
-          </Button>
-        )}
+      <div role="status" className="bg-ok-tint/60 px-4 py-1.5 text-[13px]">
+        <div className="flex min-h-8 items-center gap-2">
+          <CheckIcon className="h-4 w-4 text-ok shrink-0" />
+          <span className="font-medium text-ink">Done</span>
+          {summary && <span className="tabular truncate text-ink-muted">{summary}</span>}
+          {onShowSteps && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onShowSteps}
+              aria-expanded={stepsOpen}
+              className="ml-auto -mr-2 shrink-0 underline"
+            >
+              {stepsOpen ? "Hide steps" : "Show steps"}
+            </Button>
+          )}
+        </div>
+        {stepsOpen && steps && steps.length > 0 && <StepList steps={steps} className="mb-1.5" />}
       </div>
     );
   }
@@ -217,7 +220,7 @@ export function AgentStatusStrip({
   return (
     <div
       role="alert"
-      className="bg-flag-tint px-4 py-3 text-sm"
+      className="bg-flag-tint/60 px-4 py-2.5 text-[13px]"
     >
       <div className="flex items-center gap-2">
         <XIcon className="h-4 w-4 text-flag shrink-0" />

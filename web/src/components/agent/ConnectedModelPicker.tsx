@@ -1,49 +1,32 @@
-import { useState, useCallback } from "react";
 import { useSession } from "../../lib/session";
-import { TEST_IDS } from "../../lib/contracts";
+import { TEST_IDS, modelDisplayName } from "../../lib/contracts";
+import { cx } from "../ui";
 import { ModelPicker } from "./ModelPicker";
-import { SystemMessage } from "./SystemMessage";
 
 /**
  * ConnectedModelPicker
  *
- * Maps the session's ModelOption[] (key/label/modelId) to the ModelPicker's
- * ModelOption[] (id/name/shortName/provider). On change it updates the session
- * model key and shows a SystemMessage for 3 seconds.
+ * The session's models in a ModelPicker. Option text follows CONTRACTS.md section 6: "{label} ({modelId})".
+ * Picking a model starts a new thread; the chat pane shows "Switched to …".
  */
-export function ConnectedModelPicker() {
+export function ConnectedModelPicker({ className }: { className?: string }) {
   const { modelKey, models, setModelKey } = useSession();
-  const [message, setMessage] = useState<string | null>(null);
 
   const pickerModels = models.map((m) => ({
     id: m.key,
-    name: m.label,
+    name: modelDisplayName(m),
     shortName: m.label,
     provider: m.modelId,
   }));
 
-  const handleChange = useCallback(
-    (id: string) => {
-      const model = models.find((m) => m.key === id);
-      setModelKey(id);
-      if (model) {
-        setMessage(`Switched to ${model.label}`);
-        setTimeout(() => setMessage(null), 3000);
-      }
-    },
-    [models, setModelKey],
-  );
-
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2">
-      <ModelPicker
-        className="min-w-0 flex-1 sm:flex-none"
-        models={pickerModels}
-        value={modelKey}
-        onChange={handleChange}
-        data-testid={TEST_IDS.modelSelect}
-      />
-      {message && <SystemMessage text={message} />}
-    </div>
+    <ModelPicker
+      className={cx("min-w-0", className)}
+      models={pickerModels}
+      value={modelKey}
+      onChange={setModelKey}
+      optionLabel={(m) => m.name}
+      data-testid={TEST_IDS.modelSelect}
+    />
   );
 }

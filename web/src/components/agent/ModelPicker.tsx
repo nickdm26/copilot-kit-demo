@@ -16,6 +16,8 @@ export interface ModelPickerProps
   value: string;
   onChange: (id: string) => void;
   compact?: boolean;
+  /** Option text. Default: "{name} · {provider}", or the short name when compact. */
+  optionLabel?: (m: ModelOption) => string;
 }
 
 export function ModelPicker({
@@ -23,21 +25,22 @@ export function ModelPicker({
   value,
   onChange,
   compact,
+  optionLabel,
   className,
   ...selectProps
 }: ModelPickerProps) {
   return (
     <div className={cx("relative", compact && "max-w-[130px]", className)}>
-      <label className="sr-only">Model</label>
       <Select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label="Model"
+        className="w-full truncate"
         {...selectProps}
       >
         {models.map((m) => (
           <option key={m.id} value={m.id}>
-            {compact ? m.shortName : `${m.name} · ${m.provider}`}
+            {optionLabel ? optionLabel(m) : compact ? m.shortName : `${m.name} · ${m.provider}`}
           </option>
         ))}
       </Select>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useFrontendTool, useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import {
   ProposeSwapArgsSchema,
@@ -23,6 +23,7 @@ import { computeWeekVolume } from "./weekVolume";
 import { Card } from "../ui";
 import { useHowToTool } from "../declarative";
 import { useSendUserMessage } from "../agent/useSendUserMessage";
+import { usePendingApproval } from "../agent/pendingApprovals";
 import { useSession } from "../../lib/session";
 
 function WeekSummaryTool({ args, streaming }: { args: { week?: number | string; note?: string }; streaming: boolean }) {
@@ -65,6 +66,8 @@ function SwapTool(props: {
     void respond({ approved: false, fromExerciseId: "", toExerciseId: "" });
   }, [empty, respond]);
 
+  usePendingApproval(useId(), state === "pending" && !empty, 1);
+
   const onAnswer = (approved: boolean) => {
     if (!respond || !args.fromExerciseId || !args.toExerciseId) return;
     setAnswer(approved);
@@ -105,8 +108,11 @@ function ProposeChangesTool(props: {
   const { args, status, result, respond } = props;
   const parsed = ProposeChangesArgsSchema.safeParse(args);
   const valid = parsed.success ? parsed.data : null;
+  // The trainer's answer shows at once; the tool status catches up when the agent's next run starts.
+  const [answer, setAnswer] = useState<{ approved: boolean; at: string } | null>(null);
   let cardStatus: "pending" | "approved" | "rejected" = "pending";
-  if (status === "complete") {
+  if (answer) cardStatus = answer.approved ? "approved" : "rejected";
+  else if (status === "complete") {
     try {
       const r = JSON.parse(result ?? "{}");
       cardStatus = r.approved === true ? "approved" : "rejected";
@@ -115,23 +121,23 @@ function ProposeChangesTool(props: {
     }
   }
 
-  const handleApproveAll = () => {
-    if (!respond) return;
-    const out: ProposeChangesResult = { approved: true };
+  usePendingApproval(useId(), status === "executing" && !answer && valid !== null, valid?.rows.length ?? 0);
+
+  const answerWith = (approved: boolean) => {
+    if (!respond || answer) return;
+    setAnswer({ approved, at: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) });
+    const out: ProposeChangesResult = { approved };
     void respond(out);
   };
 
-  const handleReject = () => {
-    if (!respond) return;
-    const out: ProposeChangesResult = { approved: false };
-    void respond(out);
-  };
-
-  // The chips show only once the proposal is rejected, when respond() has already been used.
-  // So the chip text goes to the agent as a new trainer message (sent after any run in progress).
+  // After the answer, respond() is used up, so follow-ups (the rejected-state chips, Undo) go to the agent as a new
+  // trainer message (sent after any run in progress).
   const { modelKey } = useSession();
   const send = useSendUserMessage(modelKey);
   const handleSuggest = (text: string) => send(valid ? `${text} for week ${valid.week}` : text);
+  const handleUndo = valid
+    ? () => send(`Undo the week ${valid.week} changes you just applied and put those cells back as they were`)
+    : undefined;
 
   return (
     <ProgramDiffCard
@@ -139,8 +145,10 @@ function ProposeChangesTool(props: {
       rows={valid?.rows ?? [{ cell: "…", before: "…", after: "…" }]}
       reason={valid?.reason}
       status={cardStatus}
-      onApproveAll={handleApproveAll}
-      onReject={handleReject}
+      appliedAt={answer?.approved ? answer.at : undefined}
+      onApproveAll={() => answerWith(true)}
+      onReject={() => answerWith(false)}
+      onUndo={handleUndo}
       onSuggest={handleSuggest}
     />
   );

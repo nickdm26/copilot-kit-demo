@@ -13,7 +13,8 @@ const variants: Record<ButtonVariant, string> = {
   primary: "bg-accent text-on-fill border-accent hover:bg-accent-strong hover:border-accent-strong",
   secondary: "bg-surface text-ink border-border hover:bg-bg",
   ghost: "bg-transparent text-ink border-transparent hover:bg-accent-tint",
-  danger: "bg-flag text-on-fill border-flag hover:bg-flag-strong hover:border-flag-strong",
+  // Outlined: red text on the surface (4.6:1), not a red fill.
+  danger: "bg-surface text-flag border-flag hover:bg-flag-tint",
 };
 
 const sizes: Record<ButtonSize, string> = {

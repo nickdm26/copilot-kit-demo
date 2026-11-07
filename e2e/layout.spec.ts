@@ -15,13 +15,16 @@ async function openChat(page: Page, name: string) {
   await page.locator('[data-testid="chat"] textarea').first().waitFor();
 }
 
-// The message list is the tallest scrollable element inside the chat panel.
+// The message list is the tallest scrollable element inside the chat panel that fits in the panel. (A scrollable
+// element taller than the panel is sized to its content, e.g. a list inside the real scroller, so it isn't the one.)
 async function stretchMessageScroller(page: Page) {
   return page.evaluate(() => {
     const chat = document.querySelector('[data-testid="chat"]')!;
+    const panelHeight = chat.clientHeight;
     let best: HTMLElement | null = null;
     chat.querySelectorAll<HTMLElement>("*").forEach((el) => {
       if (el.tagName === "TEXTAREA" || !/(auto|scroll)/.test(getComputedStyle(el).overflowY)) return;
+      if (el.clientHeight > panelHeight) return;
       if (!best || el.clientHeight > best.clientHeight) best = el;
     });
     if (!best) return false;

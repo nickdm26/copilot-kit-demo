@@ -10,7 +10,7 @@ export const arohaProfile: ClientProfilePanelProps = {
   selectedClientId: "aroha",
   onSelectClient: () => {},
   name: "Aroha Tane",
-  trainingAgeYears: 2,
+  experience: "Intermediate",
   daysPerWeek: 3,
   goals: [
     "Back squat 120 kg by March",
@@ -26,7 +26,7 @@ export const arohaProfile: ClientProfilePanelProps = {
   ],
   injuries: [
     {
-      area: "shoulder",
+      area: "Left shoulder",
       note: "History of impingement. Avoid behind-neck pressing and deep dips.",
     },
   ],

@@ -1,157 +1,171 @@
-import { Badge, Card, Chip, Select } from "../ui";
+import { Badge, Chip, Select, cx } from "../ui";
 
 export interface ClientProfilePanelProps {
   /** Clients for the dropdown selector. */
   clients: { id: string; name: string }[];
   selectedClientId: string;
   onSelectClient: (id: string) => void;
+  /** Hide the client dropdown (when another one is on screen). */
+  hideSelector?: boolean;
+  /** data-testid for the dropdown. */
+  selectTestId?: string;
 
   /** Display info for the selected client. */
   name: string;
-  trainingAgeYears: number;
+  /** Experience level, e.g. "Intermediate". */
+  experience: string;
   daysPerWeek: number;
 
   /** Goals displayed as a bullet list. */
   goals: string[];
+  /** Trainer notes, shown under the goals. */
+  notes?: string;
 
-  /** Equipment shown as toggleable chips. */
+  /** Equipment chips. Available ones get the accent; the rest are muted. */
   equipment: { name: string; available: boolean }[];
 
-  /** Injuries shown as flagged cards. */
+  /** Injuries shown as flagged boxes. `area` is the badge text, e.g. "Left shoulder". */
   injuries: { area: string; note: string }[];
 
-  /** Called when an equipment chip is clicked. */
+  /** When set, equipment chips are toggle buttons. Without it they are plain labels. */
   onToggleEquipment?: (name: string) => void;
 }
 
 function EyeIcon() {
   return (
     <svg
-      width="14"
-      height="14"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
-      strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
 
+function SectionHeading({ children }: { children: string }) {
+  return <h3 className="m-0 font-heading text-[15px] uppercase tracking-wide text-ink-muted">{children}</h3>;
+}
+
 /**
  * ClientProfilePanel
  *
- * Displays a compact client profile card with selector, goals, equipment chips,
- * injury notes, and a footer hint. Designed for 260–320px side-panel use.
+ * The client picker, then one card: name and schedule, goals, notes, equipment, injury notes, and a note that the
+ * agent can read it. Designed for 260–320px side-panel use.
  */
 export function ClientProfilePanel({
   clients,
   selectedClientId,
   onSelectClient,
+  hideSelector = false,
+  selectTestId,
   name,
-  trainingAgeYears,
+  experience,
   daysPerWeek,
   goals,
+  notes,
   equipment,
   injuries,
   onToggleEquipment,
 }: ClientProfilePanelProps) {
   return (
-    <div className="flex flex-col gap-3 w-full min-w-0" style={{ maxWidth: 320 }}>
+    <div className="flex w-full min-w-0 flex-col gap-4">
       {/* -- Client selector -- */}
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-ink-muted font-body">Client</span>
-        <Select
-          value={selectedClientId}
-          onChange={(e) => onSelectClient(e.target.value)}
-          aria-label="Select client"
-        >
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-      </label>
+      {hideSelector ? null : (
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-ink-muted">Client</span>
+          <Select
+            value={selectedClientId}
+            onChange={(e) => onSelectClient(e.target.value)}
+            data-testid={selectTestId}
+            className="w-full"
+          >
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </label>
+      )}
 
-      {/* -- Client info card -- */}
-      <Card>
-        <h2 className="font-heading text-2xl uppercase tracking-wide text-ink m-0">
-          {name}
-        </h2>
-        <p className="mt-1 text-sm text-ink-muted font-body">
-          Training age {trainingAgeYears} yrs · {daysPerWeek} days a week
-        </p>
-      </Card>
-
-      {/* -- Goals -- */}
-      <div>
-        <h3 className="text-xs font-medium text-ink-muted font-heading uppercase tracking-wide mb-2">
-          Goals
-        </h3>
-        <ul className="list-disc list-inside space-y-1">
-          {goals.map((goal, i) => (
-            <li key={i} className="text-sm text-ink font-body leading-snug">
-              {goal}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* -- Equipment -- */}
-      <div>
-        <h3 className="text-xs font-medium text-ink-muted font-heading uppercase tracking-wide mb-2">
-          Equipment
-        </h3>
-        <div className="flex flex-wrap gap-1.5">
-          {equipment.map((item) => (
-            <Chip
-              key={item.name}
-              selected={item.available}
-              onClick={() => onToggleEquipment?.(item.name)}
-            >
-              {item.name}
-            </Chip>
-          ))}
-        </div>
-      </div>
-
-      {/* -- Injury notes -- */}
-      {injuries.length > 0 && (
+      <section className="flex flex-col gap-4 rounded-md border border-border bg-surface p-4">
         <div>
-          <h3 className="text-xs font-medium text-ink-muted font-heading uppercase tracking-wide mb-2">
-            Injury notes
-          </h3>
+          <h2 className="m-0 font-heading text-[26px] uppercase leading-[1.1] tracking-wide text-ink">{name}</h2>
+          <p className="tabular mt-1 text-ink-muted">
+            {experience} · {daysPerWeek} days a week
+          </p>
+        </div>
+
+        {goals.length > 0 && (
           <div className="flex flex-col gap-2">
+            <SectionHeading>Goals</SectionHeading>
+            <ul className="m-0 flex list-disc flex-col gap-1 pl-[18px] text-sm">
+              {goals.map((goal, i) => (
+                <li key={i}>{goal}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {notes ? (
+          <div className="flex flex-col gap-2">
+            <SectionHeading>Notes</SectionHeading>
+            <p className="m-0 text-sm leading-snug">{notes}</p>
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-2">
+          <SectionHeading>Equipment</SectionHeading>
+          <div className="flex flex-wrap gap-1.5">
+            {equipment.map((item) =>
+              onToggleEquipment ? (
+                <Chip key={item.name} selected={item.available} onClick={() => onToggleEquipment(item.name)}>
+                  {item.name}
+                </Chip>
+              ) : (
+                <span
+                  key={item.name}
+                  className={cx(
+                    "inline-flex h-8 items-center rounded-full border px-3 text-[13px]",
+                    item.available ? "border-accent bg-accent-tint text-ink" : "border-border bg-surface text-ink-muted",
+                  )}
+                >
+                  {item.name}
+                  {item.available ? null : <span className="sr-only"> (not available)</span>}
+                </span>
+              ),
+            )}
+          </div>
+        </div>
+
+        {injuries.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <SectionHeading>Injury notes</SectionHeading>
             {injuries.map((injury, i) => (
-              <div
-                key={i}
-                className="border border-border rounded-md p-3 bg-surface"
-              >
-                <Badge tone="flag">{injury.area}</Badge>
-                <p className="mt-2 text-sm text-ink font-body leading-snug">
-                  {injury.note}
-                </p>
+              <div key={i} className="flex flex-col gap-1.5 rounded-sm border border-border p-2.5">
+                <Badge tone="flag" className="self-start">
+                  {injury.area}
+                </Badge>
+                <p className="m-0 text-sm leading-snug">{injury.note}</p>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* -- Footer note -- */}
-      <div className="border border-dashed border-accent rounded-md p-3 flex items-start gap-2">
-        <span className="text-accent shrink-0 mt-0.5">
-          <EyeIcon />
-        </span>
-        <p className="text-xs text-ink-muted font-body leading-snug m-0">
+        <p className="m-0 flex items-start gap-2 rounded-sm border border-dashed border-accent p-2.5 text-[13px] text-ink-muted">
+          <span className="mt-0.5 shrink-0 text-ink">
+            <EyeIcon />
+          </span>
           The coach agent can read this panel.
         </p>
-      </div>
+      </section>
     </div>
   );
 }

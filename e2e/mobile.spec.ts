@@ -21,7 +21,9 @@ test("a program built on mobile survives tab switching and a layout change", asy
   await page.getByRole("tab", { name: "Program" }).click();
 
   const chat = page.locator('[data-testid="chat"]');
-  const cells = page.locator('[data-testid="grid-cell"]');
+  // Phones show one day at a time and desktop a whole week, so compare one day: week 1 Monday, the first day both
+  // layouts open on.
+  const cells = page.locator('[data-testid="grid-cell"][data-week="1"][data-day="Mon"]');
   const weekTabs = page.locator('[data-testid="grid-week-tab"]');
 
   // Ask for the block on the Coach tab and approve the swap, then leave for Program while it builds.

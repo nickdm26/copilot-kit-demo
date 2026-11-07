@@ -3,7 +3,7 @@ import { Chip, cx } from "../ui";
 import { MobileShell, defaultTabs, type MobileTab } from "../../layouts/MobileShell";
 import { MobileDayView } from "./MobileDayView";
 import { PendingChangesBanner } from "./PendingChangesBanner";
-import { day3Fixture, weekOptions } from "./fixtures";
+import { day3Fixture, fixtureDayViewDays, weekOptions } from "./fixtures";
 
 type ThemeMode = "light" | "dark" | "system";
 
@@ -15,7 +15,7 @@ export default function MobileDemo() {
   const [mode, setMode] = useState<ThemeMode>("system");
   const [activeTab, setActiveTab] = useState<MobileTab>("program");
   const [selectedWeek, setSelectedWeek] = useState(3);
-  const [selectedDay, setSelectedDay] = useState("Wed");
+  const [selectedDay, setSelectedDay] = useState("Fri");
   const [pendingCount, setPendingCount] = useState(1);
 
   useEffect(() => {
@@ -24,31 +24,24 @@ export default function MobileDemo() {
     else root.setAttribute("data-theme", mode);
   }, [mode]);
 
-  const dayLabels = ["Mon", "Wed", "Fri"];
   const hasPending = pendingCount > 0;
+  const dayView = {
+    eyebrow: `${day3Fixture.blockName} · Wk ${selectedWeek} of ${day3Fixture.totalWeeks}`,
+    title: day3Fixture.clientName,
+    weeks: weekOptions,
+    selectedWeek,
+    onWeekChange: setSelectedWeek,
+    days: fixtureDayViewDays(day3Fixture),
+    selectedDay,
+    onDayChange: setSelectedDay,
+  };
 
   // Placeholder content for tabs
   const programContent = (
-    <div className="p-4">
-      <MobileDayView
-        day={day3Fixture}
-        weekOptions={weekOptions}
-        selectedWeek={selectedWeek}
-        onWeekChange={setSelectedWeek}
-        dayLabels={dayLabels}
-        selectedDay={selectedDay}
-        onDayChange={setSelectedDay}
-        onExerciseTap={(ex) => console.log("Tapped:", ex.displayName)}
-      />
-      {hasPending && (
-        <div className="px-4 pb-4">
-          <PendingChangesBanner
-            count={pendingCount}
-            onReview={() => alert("Review changes")}
-          />
-        </div>
-      )}
-    </div>
+    <MobileDayView
+      {...dayView}
+      banner={hasPending ? <PendingChangesBanner count={pendingCount} onReview={() => setActiveTab("coach")} /> : null}
+    />
   );
 
   const coachContent = (
@@ -115,23 +108,14 @@ export default function MobileDemo() {
         <section>
           <h2 className="font-heading text-lg uppercase tracking-wide mb-3">PendingChangesBanner</h2>
           <div className="space-y-2">
-            <PendingChangesBanner count={1} onReview={() => alert("Review 1 change")} />
-            <PendingChangesBanner count={3} onReview={() => alert("Review 3 changes")} />
+            <PendingChangesBanner count={1} onReview={() => console.log("Review 1 change")} />
+            <PendingChangesBanner count={3} onReview={() => console.log("Review 3 changes")} />
           </div>
         </section>
 
         <section>
           <h2 className="font-heading text-lg uppercase tracking-wide mb-3">MobileDayView (standalone)</h2>
-          <MobileDayView
-            day={day3Fixture}
-            weekOptions={weekOptions}
-            selectedWeek={selectedWeek}
-            onWeekChange={setSelectedWeek}
-            dayLabels={dayLabels}
-            selectedDay={selectedDay}
-            onDayChange={setSelectedDay}
-            onExerciseTap={(ex) => console.log("Tapped:", ex.displayName)}
-          />
+          <MobileDayView {...dayView} />
         </section>
       </div>
     </div>

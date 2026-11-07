@@ -52,7 +52,7 @@ export function ProgressCard({
   if (points.length === 0) return null;
 
   /* Chart layout */
-  const PAD = { left: 40, right: 15, top: 10, bottom: 25 };
+  const PAD = { left: 20, right: 20, top: 22, bottom: 25 };
   const W = 320;
   const H = 130;
   const chartW = W - PAD.left - PAD.right;
@@ -91,16 +91,9 @@ export function ProgressCard({
   return (
     <Card className={cx("w-full", className)}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-heading text-base uppercase tracking-wide">
-          {lift}
-          <span className="text-ink-muted font-normal"> · {topSet}</span>
-        </h3>
-        <Badge tone={badgeTone}>
-          <span
-            className="inline-block rounded-full"
-            style={{ width: 6, height: 6, backgroundColor: `var(--${trend.tone})` }}
-          />
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h3 className="font-heading text-lg uppercase tracking-wide leading-tight">{lift} · top set</h3>
+        <Badge tone={badgeTone} className="tabular shrink-0">
           {trend.label}
         </Badge>
       </div>
@@ -117,18 +110,20 @@ export function ProgressCard({
           .pc-dt { fill: var(--ink); }
           .pc-ln-t { stroke: var(--flag); stroke-width: 2; fill: none; stroke-linejoin: round; stroke-linecap: round; }
           .pc-dt-t { fill: var(--flag); }
-          .pc-gl { stroke: var(--ink-muted); stroke-width: 1; stroke-dasharray: 4 3; }
+          .pc-gl { stroke: var(--color-border); stroke-width: 1; stroke-dasharray: 3 3; }
           .pc-gl-lbl { fill: var(--ink-muted); font-size: 10px; font-family: var(--font-body); }
           .pc-xlbl { fill: var(--ink-muted); font-size: 10px; font-family: var(--font-body); text-anchor: middle; }
           @media (prefers-color-scheme: dark) {
-            .pc-ln { stroke: var(--ok); }
-            .pc-dt { fill: var(--ok); }
+            :root:not([data-theme="light"]) .pc-ln { stroke: var(--ok); }
+            :root:not([data-theme="light"]) .pc-dt { fill: var(--ok); }
           }
+          :root[data-theme="dark"] .pc-ln { stroke: var(--ok); }
+          :root[data-theme="dark"] .pc-dt { fill: var(--ok); }
         `}</style>
 
         {/* Dashed gridline at latest value */}
         <line x1={PAD.left} y1={latestY} x2={xS(maxWeek)} y2={latestY} className="pc-gl" />
-        <text x={xS(maxWeek) + 4} y={latestY + 3.5} className="pc-gl-lbl">
+        <text x={xS(maxWeek)} y={latestY - 8} textAnchor="end" className="pc-gl-lbl">
           {latestKg} kg
         </text>
 
@@ -145,7 +140,7 @@ export function ProgressCard({
             cx={xS(p.week)}
             cy={yS(p.kg)}
             r={3}
-            className={i >= tStart ? "pc-dt-t" : "pc-dt"}
+            className={hasTail && i >= tStart ? "pc-dt-t" : "pc-dt"}
           />
         ))}
 
@@ -165,15 +160,15 @@ export function ProgressCard({
       <div className="grid grid-cols-3 border-t border-border pt-3 mt-3">
         <div>
           <div className="text-xs text-ink-muted">Top set</div>
-          <div className="text-sm font-medium tabular">{topSet}</div>
+          <div className="text-base font-semibold tabular">{topSet}</div>
         </div>
         <div>
           <div className="text-xs text-ink-muted">Est. 1RM</div>
-          <div className="text-sm font-medium tabular">{est1rm} kg</div>
+          <div className="text-base font-semibold tabular">{est1rm} kg</div>
         </div>
         <div>
           <div className="text-xs text-ink-muted">Goal</div>
-          <div className="text-sm font-medium tabular">{goal ? `${goal} kg` : "—"}</div>
+          <div className="text-base font-semibold tabular">{goal ? `${goal} kg` : "—"}</div>
         </div>
       </div>
     </Card>

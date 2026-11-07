@@ -14,6 +14,7 @@ export interface ProgramDiffCardProps {
   status: "pending" | "approved" | "rejected";
   appliedAt?: string;
   onApproveAll?: () => void;
+  /** Optional: the button only shows when this is set. */
   onReviewOneByOne?: () => void;
   onReject?: () => void;
   onUndo?: () => void;
@@ -21,6 +22,10 @@ export interface ProgramDiffCardProps {
 }
 
 const chips = ["Keep front squats", "Smaller change"];
+
+/** Cell label column, then before and after. Below ~384px of card width each row stacks. */
+const rowGrid = "grid gap-x-2 gap-y-0.5 grid-cols-[76px_minmax(0,1fr)_minmax(0,1fr)] @max-sm:grid-cols-1";
+const twoColGrid = "grid gap-x-2 gap-y-0.5 grid-cols-[76px_minmax(0,1fr)] @max-sm:grid-cols-1";
 
 export function ProgramDiffCard({
   week,
@@ -36,141 +41,121 @@ export function ProgramDiffCard({
 }: ProgramDiffCardProps) {
   return (
     <Card
-      className={cx(
-        "my-2 flex flex-col gap-3",
-        status === "pending" && "border-accent",
-      )}
+      className={cx("@container my-2 flex flex-col gap-3", status === "pending" && "border-accent!")}
       data-testid={TEST_IDS.programDiffCard}
       data-state={status}
     >
       {/* Header */}
-      <div className="flex items-center gap-2">
-        <h3 className="font-heading text-xl uppercase tracking-wide mr-auto">
-          Week {week}
+      <div className="flex items-center justify-between gap-2">
+        <h3
+          className={cx(
+            "font-heading text-lg uppercase tracking-wide leading-tight",
+            status === "rejected" && "text-ink-muted",
+          )}
+        >
+          Program changes · Wk {week}
         </h3>
         {status === "pending" && (
-          <Badge tone="accent">{rows.length} changes</Badge>
+          <Badge tone="accent" className="tabular shrink-0">
+            {rows.length} {rows.length === 1 ? "change" : "changes"}
+          </Badge>
         )}
         {status === "approved" && (
-          <Badge tone="ok">Approved</Badge>
+          <Badge tone="ok" className="shrink-0">
+            Approved
+          </Badge>
         )}
         {status === "rejected" && (
-          <Badge tone="neutral">Rejected</Badge>
+          <Badge tone="neutral" className="shrink-0">
+            Rejected
+          </Badge>
         )}
       </div>
 
-      {/* Reason */}
-      {reason && status === "pending" && (
-        <p className="text-sm text-ink-muted">{reason}</p>
-      )}
-
-      {/* Diff rows */}
-      <div className="flex flex-col gap-1">
-        {status === "approved"
-          ? /* Approved: show only after values */
-            rows.map((r, i) => (
-              <div
-                key={i}
-                className="flex flex-col gap-0.5 text-sm"
-              >
-                <span className="text-xs text-ink-muted">{r.cell}</span>
-                <span className="tabular font-medium">{r.after}</span>
-              </div>
-            ))
-          : /* Pending / rejected: show full diff */
-            rows.map((r, i) => (
-              <div
-                key={i}
-                className={cx(
-                  "grid gap-x-3 gap-y-0.5 px-3 py-2 rounded-sm text-sm",
-                  /* Desktop: 3 columns. Mobile: single column. */
-                  "grid-cols-[auto_1fr_1fr] max-sm:grid-cols-1",
-                  status === "rejected" && "border border-dashed border-border",
-                  status === "pending" && "bg-accent-tint/30",
-                )}
-              >
-                {/* Cell label — full width on mobile, first col on desktop */}
-                <span className="text-xs text-ink-muted font-medium max-sm:col-span-1">
-                  {r.cell}
-                </span>
-
-                {/* Before — struck-through on mobile; muted on both pending and rejected */}
-                <span
-                  className={cx(
-                    "tabular text-ink-muted max-sm:line-through max-sm:before:content-['←_']",
-                  )}
-                >
-                  {r.before}
-                </span>
-
-                {/* After — highlighted on pending, struck-through on rejected, bold on mobile */}
-                <span
-                  className={cx(
-                    "tabular max-sm:font-bold font-medium",
-                    status === "pending" && "bg-accent-tint/40 rounded-sm px-1 -mx-1",
-                    status === "rejected" && "line-through",
-                  )}
-                >
-                  {r.after}
-                </span>
-              </div>
-            ))}
+      {/* Rows */}
+      <div className="tabular flex flex-col gap-1.5 text-[13px]">
+        {status === "pending" && (
+          <div className={cx(rowGrid, "px-2 text-xs text-ink-muted @max-sm:hidden")} aria-hidden="true">
+            <span>Cell</span>
+            <span>Before</span>
+            <span>After</span>
+          </div>
+        )}
+        {rows.map((r, i) =>
+          status === "pending" ? (
+            <div key={i} className={cx(rowGrid, "rounded-sm bg-bg p-2")}>
+              <span className="text-ink-muted">{r.cell}</span>
+              <span className="text-ink-muted @max-sm:line-through">
+                <span className="sr-only">Before: </span>
+                {r.before}
+              </span>
+              <span className="self-start rounded-[4px] bg-accent-tint px-1 font-semibold @max-sm:justify-self-start">
+                <span className="sr-only">After: </span>
+                {r.after}
+              </span>
+            </div>
+          ) : status === "approved" ? (
+            <div key={i} className={cx(twoColGrid, "rounded-sm bg-bg p-2")}>
+              <span className="text-ink-muted">{r.cell}</span>
+              <span className="font-medium">{r.after}</span>
+            </div>
+          ) : (
+            <div key={i} className={cx(twoColGrid, "rounded-sm border border-dashed border-border p-2")}>
+              <span className="text-ink-muted">{r.cell}</span>
+              <span className="text-ink-muted line-through">{r.after}</span>
+            </div>
+          ),
+        )}
       </div>
 
-      {/* Rejected: empty-state message + chips */}
-      {status === "rejected" && (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-ink-muted">
-            Nothing changed. Tell the agent what to try instead.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {chips.map((label) => (
-              <Chip
-                key={label}
-                onClick={() => onSuggest?.(label)}
-              >
-                {label}
-              </Chip>
-            ))}
+      {/* Pending: reason and actions */}
+      {status === "pending" && (
+        <>
+          {reason && <p className="text-[13px] text-ink-muted">{reason}</p>}
+          <div className="flex flex-wrap gap-2 @max-sm:grid @max-sm:grid-cols-2">
+            <Button onClick={onApproveAll} className="@max-sm:col-span-2 @max-sm:h-11">
+              Approve all
+            </Button>
+            {onReviewOneByOne && (
+              <Button variant="secondary" onClick={onReviewOneByOne} className="@max-sm:h-11">
+                Review one by one
+              </Button>
+            )}
+            <Button
+              variant="danger"
+              onClick={onReject}
+              className={cx("@max-sm:h-11", !onReviewOneByOne && "@max-sm:col-span-2")}
+            >
+              Reject
+            </Button>
           </div>
-        </div>
+        </>
       )}
 
-      {/* Approved: footer */}
-      {status === "approved" && appliedAt && (
-        <div className="flex items-center gap-2 text-sm text-ink-muted">
-          <span>Applied to the program at {appliedAt}</span>
+      {/* Approved: when it was applied, and undo */}
+      {status === "approved" && (appliedAt || onUndo) && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="tabular text-xs text-ink-muted">
+            {appliedAt ? `Applied to the program at ${appliedAt}` : "Applied to the program"}
+          </span>
           {onUndo && (
-            <Button variant="ghost" size="sm" onClick={onUndo}>
+            <Button variant="ghost" size="sm" onClick={onUndo} className="underline">
               Undo
             </Button>
           )}
         </div>
       )}
 
-      {/* Pending: action buttons */}
-      {status === "pending" && (
-        <div className="flex flex-wrap gap-2 max-sm:flex-col">
-          <Button size="sm" onClick={onApproveAll} className="max-sm:w-full">
-            Approve all
-          </Button>
-          <div className="flex gap-2 max-sm:w-full max-sm:flex-col">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={onReviewOneByOne}
-              className="max-sm:w-full"
-            >
-              Review one by one
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={onReject}
-              className="max-sm:w-full border-flag text-flag hover:bg-flag-tint"
-            >
-              Reject
-            </Button>
+      {/* Rejected: what next */}
+      {status === "rejected" && (
+        <div className="flex flex-col gap-2">
+          <p className="text-[13px] text-ink-muted">Nothing changed. Tell the agent what to try instead.</p>
+          <div className="flex flex-wrap gap-1.5">
+            {chips.map((label) => (
+              <Chip key={label} onClick={() => onSuggest?.(label)}>
+                {label}
+              </Chip>
+            ))}
           </div>
         </div>
       )}

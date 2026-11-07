@@ -1,4 +1,5 @@
 import type { Day, Flag } from "../../lib/contracts";
+import type { DayViewDay, DayViewExercise } from "./MobileDayView";
 
 export interface FixtureExercise {
   slot: string;
@@ -81,12 +82,12 @@ export const day3Fixture: FixtureDay = {
 };
 
 export const weekOptions: FixtureWeekOption[] = [
-  { value: 1, label: "Wk 1 of 6" },
-  { value: 2, label: "Wk 2 of 6" },
-  { value: 3, label: "Wk 3 of 6" },
-  { value: 4, label: "Wk 4 of 6" },
-  { value: 5, label: "Wk 5 of 6" },
-  { value: 6, label: "Wk 6 of 6" },
+  { value: 1, label: "Wk 1" },
+  { value: 2, label: "Wk 2" },
+  { value: 3, label: "Wk 3" },
+  { value: 4, label: "Wk 4" },
+  { value: 5, label: "Wk 5" },
+  { value: 6, label: "Wk 6" },
 ];
 
 export function dayToContractDay(fixture: FixtureDay): Day {
@@ -107,4 +108,21 @@ export function fixtureFlags(fixture: FixtureDay): Flag[] {
   return fixture.exercises
     .filter((e) => e.flagReason)
     .map((e) => ({ exerciseId: e.exerciseId, reason: e.flagReason! }));
+}
+
+/** The fixture as MobileDayView data: three days, the Wed one filled in. */
+export function fixtureDayViewDays(fixture: FixtureDay): DayViewDay[] {
+  const exercises: DayViewExercise[] = fixture.exercises.map((e) => ({
+    key: e.slot,
+    slot: e.slot,
+    name: e.displayName,
+    prescription: `${e.sets} x ${e.reps}${e.reps.endsWith(" m") ? "" : ` @ RPE ${e.rpe}`}`,
+    flagReason: e.flagReason,
+    agentEdited: e.agentEdited,
+  }));
+  return [
+    { value: "Mon", label: "Day 1 · Lower", exercises: exercises.slice(0, 3) },
+    { value: "Wed", label: "Day 2 · Upper", exercises: exercises.slice(1, 4) },
+    { value: fixture.label === "Wed" ? "Fri" : fixture.label, label: "Day 3 · Full", exercises },
+  ];
 }

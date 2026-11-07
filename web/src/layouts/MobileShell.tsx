@@ -39,10 +39,8 @@ export interface MobileShellProps {
 function ProgramIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6" aria-hidden="true">
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 9h18M9 4v16" />
     </svg>
   );
 }
@@ -50,10 +48,7 @@ function ProgramIcon() {
 function CoachIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6" aria-hidden="true">
-      <path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-      <path d="M6 9h12" />
-      <path d="M7 9v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9" />
-      <path d="M10 16h4" />
+      <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
     </svg>
   );
 }
@@ -61,8 +56,8 @@ function CoachIcon() {
 function ClientIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6" aria-hidden="true">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
     </svg>
   );
 }
@@ -151,7 +146,7 @@ export function MobileShell({
                   />
                 )}
               </div>
-              <span className="text-[11px] leading-none">{tab.label}</span>
+              <span className="text-xs leading-none">{tab.label}</span>
             </button>
           );
         })}
