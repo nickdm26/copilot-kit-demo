@@ -11,6 +11,7 @@ public static class ToolNames
     public const string ShowExerciseCard = "showExerciseCard";
     public const string ShowWeekSummary = "showWeekSummary";
     public const string ProposeSwap = "proposeSwap";
+    public const string ShowHowTo = "showHowTo";
 }
 
 public sealed record GetClientArgs(string ClientId);

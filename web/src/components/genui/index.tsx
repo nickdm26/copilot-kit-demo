@@ -13,6 +13,7 @@ import { SwapApproval, type SwapState } from "./SwapApproval";
 import { WeekSummary } from "./WeekSummary";
 import { useProgramState } from "./useProgramState";
 import { computeWeekVolume } from "./weekVolume";
+import { useHowToTool } from "../declarative";
 
 function WeekSummaryTool({ args, streaming }: { args: { week?: number | string; note?: string }; streaming: boolean }) {
   const program = useProgramState();
@@ -99,6 +100,9 @@ export function GenUi(): null {
       <SwapTool args={args} status={status} result={result} respond={respond} />
     ),
   });
+
+  // showHowTo is a backend tool; this only renders its calls (declarative how-to, Task 9).
+  useHowToTool();
 
   return null;
 }

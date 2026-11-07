@@ -208,6 +208,8 @@ export const TOOLS = {
   showExerciseCard: "showExerciseCard",
   showWeekSummary: "showWeekSummary",
   proposeSwap: "proposeSwap",
+  /** Declarative how-to. Args schema lives in components/declarative/schema.ts (the security boundary). */
+  showHowTo: "showHowTo",
 } as const;
 export type ToolName = (typeof TOOLS)[keyof typeof TOOLS];
 

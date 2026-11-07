@@ -165,10 +165,12 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 | `showExerciseCard` | frontend render | `{ exerciseId, sets, reps, rpe, week?, day?, note? }` | n/a | `ExerciseCard` | `useFrontendTool` (`followUp: false`, render) |
 | `showWeekSummary` | frontend render | `{ week, note? }` | n/a | `WeekSummary` | `useFrontendTool` (`followUp: true`, render: the agent keeps building after each week) |
 | `proposeSwap` | frontend human in the loop | `{ fromExerciseId, toExerciseId, reason, week?, day? }` (no week and no day means every occurrence) | `{ approved, fromExerciseId, toExerciseId }` via `respond()` | `SwapApproval` | `useHumanInTheLoop` |
+| `showHowTo` | .NET backend, rendered by the web app | `{ ui }`: a tree of catalog nodes (`Card`, `Heading`, `Stepper`, `PoseFigure`, `TempoStrip`, `Callout`); schema in `web/src/components/declarative/schema.ts` | `"Shown to the trainer in the chat."`, or an `Error:` string for a tree that breaks the rules | `HowToCard` | `useRenderTool` |
 
 - Why `useFrontendTool` for the two render tools: in CopilotKit 1.85.0 `useRenderTool` never sends the tool definition to the model, and `useComponent` gives its render no status (so no streaming skeleton).
 - `ExerciseCard` looks up name, cues and `shoulderStress` from the seed library by `exerciseId`. The agent never sends cue text.
 - `WeekSummary` computes sets per muscle for `week` from the current program state: each set counts **1.0** for the primary muscle and **0.5** for each other muscle. A muscle with sets > 0 is "too little" below **4** and "too much" above **16** (`VOLUME_WEIGHTS`, `VOLUME_RANGE`).
+- `showHowTo` (declarative generative UI, added in Task 9): the agent sends JSON only, never HTML, CSS or code. The web app validates `ui` with zod (`validateHowTo`: strict props, at most 4 levels deep, at most 50 nodes, at most one `Stepper`) and renders nothing that fails. `ShowHowToTool.cs` checks the same rules so the model gets an error to fix. `useRenderTool` is right here because the tool is a backend tool: its definition reaches the model from .NET.
 - Tool names are camelCase exactly as above, on every side. C# constants: `ToolNames.*`. TS constants: `TOOLS.*`.
 
 ---
@@ -180,7 +182,7 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 3. Fill it day by day: one `updateProgram` call per day of week 1, then one call per later week (all its days in one call).
 4. A **shoulder-risky lift** is any exercise with `shoulderStress: "high"` for a client with a shoulder injury. When one is in the program, add it to `flags` and call `proposeSwap` with a `low` or `medium` alternative **before** changing it.
 5. On approve: `updateProgram` with the swapped exercise in every affected day, and remove that flag. On reject: keep the original and the flag, and say in one sentence why it was flagged.
-6. After writing a week, call `showWeekSummary` for it. Use `showExerciseCard` when the trainer asks about a lift or a day.
+6. After writing a week, call `showWeekSummary` for it. Use `showExerciseCard` when the trainer asks about a lift or a day in the program. Use `showHowTo` when the trainer asks how to do a lift or asks to see one ("Show me a pause squat"), calling `getClient` first so it can mention the client's injuries.
 7. Treat the program state sent by the client as the truth. The trainer may have edited it. Rebalance from it; never revert trainer edits without saying so.
 8. Keep chat text short. The grid and the cards carry the detail.
 
