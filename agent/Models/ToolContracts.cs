@@ -10,7 +10,8 @@ public static class ToolNames
     public const string UpdateProgram = "updateProgram";
     public const string ShowExerciseCard = "showExerciseCard";
     public const string ShowWeekSummary = "showWeekSummary";
-    public const string ProposeSwap = "proposeSwap";
+        public const string ShowProgressCard = "showProgressCard";
+        public const string ProposeSwap = "proposeSwap";
 }
 
 public sealed record GetClientArgs(string ClientId);
@@ -49,6 +50,18 @@ public sealed record ShowExerciseCardArgs(
     string? Note = null);
 
 public sealed record ShowWeekSummaryArgs(int Week, string? Note = null);
+
+public sealed record ShowProgressCardArgs(
+    string Lift,
+    IReadOnlyList<ProgressPoint> Points,
+    string TopSet,
+    double Est1rm,
+    double? Goal = null,
+    ProgressTrend? Trend = null);
+
+public sealed record ProgressPoint(int Week, double Kg);
+
+public sealed record ProgressTrend(string Tone, string Label);
 
 /// <summary>When Week and Day are both null the swap applies to every occurrence.</summary>
 public sealed record ProposeSwapArgs(

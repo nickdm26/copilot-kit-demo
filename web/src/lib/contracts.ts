@@ -207,6 +207,7 @@ export const TOOLS = {
   updateProgram: "updateProgram",
   showExerciseCard: "showExerciseCard",
   showWeekSummary: "showWeekSummary",
+  showProgressCard: "showProgressCard",
   proposeSwap: "proposeSwap",
 } as const;
 export type ToolName = (typeof TOOLS)[keyof typeof TOOLS];
@@ -269,6 +270,33 @@ export const ShowWeekSummaryArgsSchema = z
   })
   .strict();
 
+/** showProgressCard (frontend render). One lift's recent weekly top-set trend. */
+export const ShowProgressCardArgsSchema = z
+  .object({
+    lift: z.string().max(60),
+    points: z
+      .array(
+        z
+          .object({
+            week: z.number().int().min(1).max(52),
+            kg: z.number().min(0).max(1000),
+          })
+          .strict(),
+      )
+      .min(2)
+      .max(26),
+    topSet: z.string().max(40),
+    est1rm: z.number().min(0).max(1000),
+    goal: z.number().min(0).max(1000).optional(),
+    trend: z
+      .object({
+        tone: z.enum(["ok", "flag"]),
+        label: z.string().max(40),
+      })
+      .strict(),
+  })
+  .strict();
+
 /**
  * proposeSwap (frontend human in the loop).
  * When week and day are both omitted the swap applies to every occurrence.
@@ -297,6 +325,7 @@ export type SearchExercisesArgs = z.infer<typeof SearchExercisesArgsSchema>;
 export type UpdateProgramArgs = z.infer<typeof UpdateProgramArgsSchema>;
 export type ShowExerciseCardArgs = z.infer<typeof ShowExerciseCardArgsSchema>;
 export type ShowWeekSummaryArgs = z.infer<typeof ShowWeekSummaryArgsSchema>;
+export type ShowProgressCardArgs = z.infer<typeof ShowProgressCardArgsSchema>;
 export type ProposeSwapArgs = z.infer<typeof ProposeSwapArgsSchema>;
 export type ProposeSwapResult = z.infer<typeof ProposeSwapResultSchema>;
 

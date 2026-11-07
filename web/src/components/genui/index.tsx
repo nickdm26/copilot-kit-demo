@@ -3,16 +3,20 @@ import { useFrontendTool, useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import {
   ProposeSwapArgsSchema,
   ShowExerciseCardArgsSchema,
+  ShowProgressCardArgsSchema,
   ShowWeekSummaryArgsSchema,
   TOOLS,
   type ProposeSwapArgs,
   type ProposeSwapResult,
+  type ShowProgressCardArgs,
 } from "../../lib/contracts";
 import { ExerciseCard } from "./ExerciseCard";
+import { ProgressCard } from "../agent/ProgressCard";
 import { SwapApproval, type SwapState } from "./SwapApproval";
 import { WeekSummary } from "./WeekSummary";
 import { useProgramState } from "./useProgramState";
 import { computeWeekVolume } from "./weekVolume";
+import { Card } from "../ui";
 
 function WeekSummaryTool({ args, streaming }: { args: { week?: number | string; note?: string }; streaming: boolean }) {
   const program = useProgramState();
@@ -64,7 +68,28 @@ function SwapTool(props: {
   return <SwapApproval args={args} state={state} onAnswer={onAnswer} />;
 }
 
-/** Registers the three generative UI tools. Mount once inside the providers. Renders nothing. */
+function ProgressCardTool({ args, streaming }: { args: Partial<ShowProgressCardArgs>; streaming: boolean }) {
+  // A finished call without points has nothing to chart; some models send empty args.
+  if (!streaming && !args.points) return null;
+  if (!args.points || args.points.length < 2) {
+    return streaming ? (
+      <Card className="my-2 h-24 animate-pulse bg-surface" />
+    ) : null;
+  }
+  return (
+    <ProgressCard
+      lift={args.lift ?? "Lift"}
+      points={args.points}
+      topSet={args.topSet ?? ""}
+      est1rm={args.est1rm ?? 0}
+      goal={args.goal}
+      trend={args.trend ?? { tone: "ok", label: "Progressing" }}
+      className="my-2"
+    />
+  );
+}
+
+/** Registers the generative UI tools. Mount once inside the providers. Renders nothing. */
 export function GenUi(): null {
   // useFrontendTool (not useRenderTool): useRenderTool only renders, it never sends the tool definition to the model.
   useFrontendTool({
@@ -88,6 +113,18 @@ export function GenUi(): null {
     followUp: true,
     handler: async () => "shown",
     render: ({ args, status }) => <WeekSummaryTool args={args} streaming={status === "inProgress"} />,
+  });
+
+  useFrontendTool({
+    name: TOOLS.showProgressCard,
+    description:
+      "Show a progress card (chart of a lift's weekly top-set trend) in the chat when the trainer asks how a lift is going.",
+    parameters: ShowProgressCardArgsSchema,
+    followUp: false,
+    handler: async () => "shown",
+    render: ({ args, status }) => (
+      <ProgressCardTool args={args} streaming={status === "inProgress"} />
+    ),
   });
 
   useHumanInTheLoop({
