@@ -2,6 +2,7 @@ import { CopilotKitProvider, CopilotChat, useAgentContext } from "@copilotkit/re
 import { API, TEST_IDS, modelDisplayName } from "./lib/contracts";
 import { SessionProvider, useSession } from "./lib/session";
 import Styleguide from "./components/ui/Styleguide";
+import MobileDemo from "./components/program/MobileDemo";
 import { ProgramGrid } from "./components/program-grid";
 import { GenUi } from "./components/genui";
 
@@ -78,6 +79,7 @@ function Shell() {
 
 export default function App() {
   if (location.pathname === "/styleguide") return <Styleguide />;
+  if (location.pathname === "/mobile") return <MobileDemo />;
   return (
     <CopilotKitProvider runtimeUrl={API.copilotkit}>
       <SessionProvider>
