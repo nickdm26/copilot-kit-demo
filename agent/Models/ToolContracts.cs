@@ -12,6 +12,7 @@ public static class ToolNames
     public const string ShowWeekSummary = "showWeekSummary";
         public const string ShowProgressCard = "showProgressCard";
         public const string ProposeSwap = "proposeSwap";
+    public const string ProposeChanges = "proposeChanges";
 }
 
 public sealed record GetClientArgs(string ClientId);
@@ -72,3 +73,9 @@ public sealed record ProposeSwapArgs(
     WeekDay? Day = null);
 
 public sealed record ProposeSwapResult(bool Approved, string FromExerciseId, string ToExerciseId);
+
+public sealed record ProposeChangesArgs(int Week, IReadOnlyList<DiffRow> Rows, string? Reason = null);
+
+public sealed record DiffRow(string Cell, string Before, string After);
+
+public sealed record ProposeChangesResult(bool Approved);

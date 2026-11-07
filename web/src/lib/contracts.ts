@@ -209,6 +209,7 @@ export const TOOLS = {
   showWeekSummary: "showWeekSummary",
   showProgressCard: "showProgressCard",
   proposeSwap: "proposeSwap",
+  proposeChanges: "proposeChanges",
 } as const;
 export type ToolName = (typeof TOOLS)[keyof typeof TOOLS];
 
@@ -320,6 +321,32 @@ export const ProposeSwapResultSchema = z
   })
   .strict();
 
+/** proposeChanges (frontend human in the loop). Batch program changes for the trainer to approve or reject. */
+export const ProposeChangesArgsSchema = z
+  .object({
+    week: z.number().int().min(1).max(12),
+    rows: z
+      .array(
+        z
+          .object({
+            cell: z.string().max(40),
+            before: z.string().max(80),
+            after: z.string().max(80),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(20),
+    reason: z.string().max(200).optional(),
+  })
+  .strict();
+
+export const ProposeChangesResultSchema = z
+  .object({
+    approved: z.boolean(),
+  })
+  .strict();
+
 export type GetClientArgs = z.infer<typeof GetClientArgsSchema>;
 export type SearchExercisesArgs = z.infer<typeof SearchExercisesArgsSchema>;
 export type UpdateProgramArgs = z.infer<typeof UpdateProgramArgsSchema>;
@@ -328,6 +355,8 @@ export type ShowWeekSummaryArgs = z.infer<typeof ShowWeekSummaryArgsSchema>;
 export type ShowProgressCardArgs = z.infer<typeof ShowProgressCardArgsSchema>;
 export type ProposeSwapArgs = z.infer<typeof ProposeSwapArgsSchema>;
 export type ProposeSwapResult = z.infer<typeof ProposeSwapResultSchema>;
+export type ProposeChangesArgs = z.infer<typeof ProposeChangesArgsSchema>;
+export type ProposeChangesResult = z.infer<typeof ProposeChangesResultSchema>;
 
 // ---------------------------------------------------------------------------
 // Weekly volume (WeekSummary)

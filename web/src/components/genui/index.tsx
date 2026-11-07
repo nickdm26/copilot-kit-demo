@@ -2,16 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import { useFrontendTool, useHumanInTheLoop } from "@copilotkit/react-core/v2";
 import {
   ProposeSwapArgsSchema,
+  ProposeChangesArgsSchema,
   ShowExerciseCardArgsSchema,
   ShowProgressCardArgsSchema,
   ShowWeekSummaryArgsSchema,
   TOOLS,
   type ProposeSwapArgs,
   type ProposeSwapResult,
+  type ProposeChangesArgs,
+  type ProposeChangesResult,
   type ShowProgressCardArgs,
 } from "../../lib/contracts";
 import { ExerciseCard } from "./ExerciseCard";
 import { ProgressCard } from "../agent/ProgressCard";
+import { ProgramDiffCard } from "../agent/ProgramDiffCard";
 import { SwapApproval, type SwapState } from "./SwapApproval";
 import { WeekSummary } from "./WeekSummary";
 import { useProgramState } from "./useProgramState";
@@ -89,6 +93,57 @@ function ProgressCardTool({ args, streaming }: { args: Partial<ShowProgressCardA
   );
 }
 
+function ProposeChangesTool(props: {
+  args: Partial<ProposeChangesArgs>;
+  status: string;
+  result?: string;
+  respond?: (r: unknown) => Promise<void>;
+}) {
+  const { args, status, result, respond } = props;
+  const parsed = ProposeChangesArgsSchema.safeParse(args);
+  const valid = parsed.success ? parsed.data : null;
+  let cardStatus: "pending" | "approved" | "rejected" = "pending";
+  if (status === "complete") {
+    try {
+      const r = JSON.parse(result ?? "{}");
+      cardStatus = r.approved === true ? "approved" : "rejected";
+    } catch {
+      cardStatus = "rejected";
+    }
+  }
+
+  const handleApproveAll = () => {
+    if (!respond) return;
+    const out: ProposeChangesResult = { approved: true };
+    void respond(out);
+  };
+
+  const handleReject = () => {
+    if (!respond) return;
+    const out: ProposeChangesResult = { approved: false };
+    void respond(out);
+  };
+
+  const handleSuggest = (text: string) => {
+    if (!respond) return;
+    // Reject the proposal so the agent gets a turn back
+    const out: ProposeChangesResult = { approved: false };
+    void respond(out);
+  };
+
+  return (
+    <ProgramDiffCard
+      week={valid?.week ?? 0}
+      rows={valid?.rows ?? [{ cell: "…", before: "…", after: "…" }]}
+      reason={valid?.reason}
+      status={cardStatus}
+      onApproveAll={handleApproveAll}
+      onReject={handleReject}
+      onSuggest={handleSuggest}
+    />
+  );
+}
+
 /** Registers the generative UI tools. Mount once inside the providers. Renders nothing. */
 export function GenUi(): null {
   // useFrontendTool (not useRenderTool): useRenderTool only renders, it never sends the tool definition to the model.
@@ -136,6 +191,16 @@ export function GenUi(): null {
       <SwapTool args={args} status={status} result={result} respond={respond} />
     ),
   });
+
+    useHumanInTheLoop({
+      name: TOOLS.proposeChanges,
+      description:
+        "Ask the trainer to approve or reject a batch of program changes. Returns { approved }.",
+      parameters: ProposeChangesArgsSchema,
+      render: ({ args, status, result, respond }) => (
+        <ProposeChangesTool args={args} status={status} result={result} respond={respond} />
+      ),
+    });
 
   return null;
 }
