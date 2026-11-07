@@ -33,6 +33,7 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddSingleton<CoachTools>();
 builder.Services.AddSingleton<IChatClientFactory, OpenRouterChatClientFactory>();
 builder.Services.AddSingleton<CoachAgentBuilder>();
+builder.Services.AddProgramState(); // Lane F: updateProgram + shared program state (CONTRACTS section 9, Plan A)
 
 var app = builder.Build();
 app.MapDefaultEndpoints();
