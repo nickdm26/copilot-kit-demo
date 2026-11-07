@@ -19,7 +19,8 @@
     "@opentelemetry/instrumentation-undici": "0.35.0",
     "@opentelemetry/sdk-node": "0.301.0",
     "express": "5.3.0",
-    "tsx": "4.23.15"
+    "tsx": "4.23.15",
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
