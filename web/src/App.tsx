@@ -104,11 +104,33 @@ function Shell() {
   );
 }
 
+/**
+ * Reasoning is display-only: the model produced it, it is not part of the conversation to send back.
+ *
+ * `MapChatRole` in AGUI.Abstractions 1.0.0 has no case for the `reasoning` role, so replaying a thread that contains
+ * one fails the next run with "Unknown chat role: reasoning". CopilotKit sends the whole thread each time, so drop
+ * them from the request. This changes the request body only; the transcript keeps its "Thought for…" blocks.
+ */
+function dropReasoningFromRequest<T extends { role: string }>(messages: T[]): T[] {
+  return messages.filter((m) => m.role !== "reasoning");
+}
+
+/**
+ * The CopilotKit Web Inspector is a development tool: it shows the AG-UI event stream, agent state and reasoning.
+ * It is opt-in (`?inspector`) because its floating launcher sits above the page and swallows clicks on whatever is
+ * under it, which would break the demo script and the e2e tests.
+ */
+const inspectorEnabled = new URLSearchParams(location.search).has("inspector");
+
 export default function App() {
   if (location.pathname === "/styleguide") return <Styleguide />;
   if (location.pathname === "/mobile") return <MobileDemo />;
   return (
-    <CopilotKitProvider runtimeUrl={API.copilotkit}>
+    <CopilotKitProvider
+      runtimeUrl={API.copilotkit}
+      messageFilter={dropReasoningFromRequest}
+      enableInspector={inspectorEnabled}
+    >
       <SessionProvider>
         <GenUi />
         <Shell />
