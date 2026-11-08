@@ -12,6 +12,8 @@ import { API, ClientSchema, ModelOptionSchema, type Client, type ModelOption } f
  * - `models`      options from GET /api/models (empty until loaded).
  * - `clients`     seed clients from @seed/clients.json.
  * - `setModelKey` / `setClientId`  change the selection and start a new thread.
+ * - `subagents`   the "Sub-agents" toggle (CONTRACTS section 11). Sent with every run as AG-UI context; changing it
+ *                 keeps the thread. Starts on with `?subagents` in the URL, else remembers the last choice.
  *
  * Lane F: when `threadId` changes, reset the grid to `emptyProgram(clientId)`.
  */
@@ -23,9 +25,23 @@ export interface AppSession {
   clients: Client[];
   setModelKey: (key: string) => void;
   setClientId: (id: string) => void;
+  subagents: boolean;
+  setSubagents: (on: boolean) => void;
 }
 
 const clients: Client[] = z.array(ClientSchema).parse(clientsJson);
+
+const SUBAGENTS_KEY = "ptcoach.subagents";
+
+function initialSubagents(): boolean {
+  const param = new URLSearchParams(location.search).get("subagents");
+  if (param !== null) return param !== "0" && param !== "off" && param !== "false";
+  try {
+    return localStorage.getItem(SUBAGENTS_KEY) === "on";
+  } catch {
+    return false; // storage blocked (private window, previews)
+  }
+}
 
 const Ctx = createContext<AppSession | null>(null);
 
@@ -59,10 +75,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setClientIdState(id);
     setThreadId(crypto.randomUUID());
   }, []);
+  const [subagents, setSubagentsState] = useState(initialSubagents);
+  const setSubagents = useCallback((on: boolean) => {
+    setSubagentsState(on);
+    try {
+      localStorage.setItem(SUBAGENTS_KEY, on ? "on" : "off");
+    } catch {
+      /* storage blocked: the toggle still works for this page */
+    }
+  }, []);
 
   const value = useMemo<AppSession>(
-    () => ({ modelKey, clientId, threadId, models, clients, setModelKey, setClientId }),
-    [modelKey, clientId, threadId, models, setModelKey, setClientId],
+    () => ({ modelKey, clientId, threadId, models, clients, setModelKey, setClientId, subagents, setSubagents }),
+    [modelKey, clientId, threadId, models, setModelKey, setClientId, subagents, setSubagents],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

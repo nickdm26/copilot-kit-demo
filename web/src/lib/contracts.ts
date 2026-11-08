@@ -212,6 +212,11 @@ export const TOOLS = {
   proposeChanges: "proposeChanges",
   /** Declarative how-to. Args schema lives in components/declarative/schema.ts (the security boundary). */
   showHowTo: "showHowTo",
+  /** Parallel sub-agents (CONTRACTS section 11). The coach's backend tool, only on runs with the toggle on. */
+  runSubagents: "runSubagents",
+  /** The sub-agents' own scoped write tools. They only ever appear in subagent-attributed events. */
+  writeDay: "writeDay",
+  writeWeek: "writeWeek",
 } as const;
 export type ToolName = (typeof TOOLS)[keyof typeof TOOLS];
 
@@ -349,6 +354,63 @@ export const ProposeChangesResultSchema = z
   })
   .strict();
 
+// ---------------------------------------------------------------------------
+// Parallel sub-agents (CONTRACTS section 11)
+// ---------------------------------------------------------------------------
+
+export const SUBAGENT_KINDS = ["build-day", "build-week", "injury-screen"] as const;
+export const SubagentKindSchema = z.enum(SUBAGENT_KINDS);
+
+export const SUBAGENTS = {
+  /** Description of the AG-UI context entry the header toggle sends (useAgentContext). Value: `{ enabled: boolean }`. */
+  contextDescription: "Parallel sub-agents",
+  maxTasks: 7,
+  maxBriefLength: 400,
+  /** SUBAGENT_STARTED.name for each kind. */
+  names: { "build-day": "day-builder", "build-week": "week-builder", "injury-screen": "injury-screen" },
+} as const;
+
+export const SubagentTaskSchema = z
+  .object({
+    kind: SubagentKindSchema,
+    brief: z.string().max(SUBAGENTS.maxBriefLength),
+    week: z.number().int().min(1).max(12).optional(),
+    day: WeekDaySchema.optional(),
+    focus: z.string().max(40).optional(),
+  })
+  .strict();
+
+/** runSubagents (.NET backend, rendered by the web app as SubagentBoard). */
+export const RunSubagentsArgsSchema = z
+  .object({
+    clientId: IdSchema.optional(),
+    goal: GoalSchema.optional(),
+    daysPerWeek: z.number().int().min(1).max(6).optional(),
+    tasks: z.array(SubagentTaskSchema).min(1).max(SUBAGENTS.maxTasks),
+  })
+  .strict();
+
+/** One sub-agent's report: SUBAGENT_FINISHED.result, and an entry of the runSubagents result's `reports`. */
+export const SubagentReportSchema = z.object({
+  subagentRunId: z.string(),
+  kind: SubagentKindSchema,
+  title: z.string(),
+  status: z.enum(["done", "error"]),
+  summary: z.string(),
+  week: z.number().int().optional(),
+  day: WeekDaySchema.optional(),
+  wrote: z.array(z.string()).optional(),
+  riskyLifts: z.array(z.string()).optional(),
+  durationMs: z.number(),
+  inputTokens: z.number().optional(),
+  outputTokens: z.number().optional(),
+});
+
+export type SubagentKind = z.infer<typeof SubagentKindSchema>;
+export type SubagentTask = z.infer<typeof SubagentTaskSchema>;
+export type RunSubagentsArgs = z.infer<typeof RunSubagentsArgsSchema>;
+export type SubagentReport = z.infer<typeof SubagentReportSchema>;
+
 export type GetClientArgs = z.infer<typeof GetClientArgsSchema>;
 export type SearchExercisesArgs = z.infer<typeof SearchExercisesArgsSchema>;
 export type UpdateProgramArgs = z.infer<typeof UpdateProgramArgsSchema>;
@@ -391,4 +453,10 @@ export const TEST_IDS = {
   swapReject: "swap-reject",
   programDiffCard: "program-diff-card",
   voiceInput: "voice-input",
+  /** Parallel sub-agents switch (role="switch", aria-checked). */
+  subagentsToggle: "subagents-toggle",
+  /** SubagentBoard root: data-state = running/done, data-count = number of sub-agents. */
+  subagentBoard: "subagent-board",
+  /** One lane: data-subagent-run-id, data-kind, data-status = running/done/error. */
+  subagentLane: "subagent-lane",
 } as const;

@@ -1,0 +1,820 @@
+{
+  "coach": [
+    {
+      "text": null,
+      "calls": [
+        {
+          "callId": "par-1",
+          "name": "getClient",
+          "arguments": {
+            "clientId": "sarah"
+          }
+        }
+      ],
+      "delayMs": 500
+    },
+    {
+      "text": "Sarah: intermediate, strength, 3 days, mild left shoulder. I'm handing week 1 to three day-builders and an injury screen, all at once.",
+      "calls": [
+        {
+          "callId": "par-2",
+          "name": "runSubagents",
+          "arguments": {
+            "clientId": "sarah",
+            "goal": "strength",
+            "daysPerWeek": 3,
+            "tasks": [
+              {
+                "kind": "build-day",
+                "week": 1,
+                "day": "Mon",
+                "focus": "Lower",
+                "brief": "Squat-led lower day: back squat as the main lift, then a hinge, single-leg work and core."
+              },
+              {
+                "kind": "build-day",
+                "week": 1,
+                "day": "Wed",
+                "focus": "Upper",
+                "brief": "Upper day for a strength block. She wants overhead press, so make it the main lift; rows and face pulls for balance."
+              },
+              {
+                "kind": "build-day",
+                "week": 1,
+                "day": "Fri",
+                "focus": "Full body",
+                "brief": "Trap-bar deadlift as the main lift, then a medium-stress press, a vertical pull and a carry."
+              },
+              {
+                "kind": "injury-screen",
+                "brief": "Left shoulder is sore under overhead load. Which strength-block lifts are risky for her, and what are the safer swaps?"
+              }
+            ]
+          }
+        }
+      ],
+      "delayMs": 700
+    },
+    {
+      "text": "Week 1 is in. Wednesday's builder used the overhead press, which is high shoulder stress for Sarah, so I've flagged it. Your call:",
+      "calls": [
+        {
+          "callId": "par-3",
+          "name": "updateProgram",
+          "arguments": {
+            "flags": [
+              {
+                "exerciseId": "overhead-press",
+                "reason": "left shoulder"
+              }
+            ]
+          }
+        },
+        {
+          "callId": "par-4",
+          "name": "proposeSwap",
+          "arguments": {
+            "fromExerciseId": "overhead-press",
+            "toExerciseId": "landmine-press",
+            "reason": "High shoulder stress on a sore left shoulder. The landmine press keeps the pressing pattern at medium stress."
+          }
+        }
+      ],
+      "delayMs": 600
+    },
+    {
+      "text": "Swapped to the landmine press and cleared the flag.",
+      "calls": [
+        {
+          "callId": "par-5",
+          "name": "updateProgram",
+          "arguments": {
+            "days": [
+              {
+                "week": 1,
+                "day": "Wed",
+                "focus": "Upper",
+                "exercises": [
+                  {
+                    "exerciseId": "landmine-press",
+                    "sets": 4,
+                    "reps": "6",
+                    "rpe": 7,
+                    "note": "Swapped from overhead press for her left shoulder."
+                  },
+                  {
+                    "exerciseId": "chest-supported-row",
+                    "sets": 4,
+                    "reps": "8",
+                    "rpe": 7,
+                    "note": ""
+                  },
+                  {
+                    "exerciseId": "dumbbell-floor-press",
+                    "sets": 3,
+                    "reps": "8-10",
+                    "rpe": 7,
+                    "note": ""
+                  },
+                  {
+                    "exerciseId": "face-pull",
+                    "sets": 3,
+                    "reps": "12-15",
+                    "rpe": 7,
+                    "note": ""
+                  }
+                ]
+              }
+            ],
+            "flags": []
+          }
+        }
+      ],
+      "delayMs": 500
+    },
+    {
+      "text": "Now weeks 2 to 4: one week-builder each, in parallel.",
+      "calls": [
+        {
+          "callId": "par-6",
+          "name": "runSubagents",
+          "arguments": {
+            "tasks": [
+              {
+                "kind": "build-week",
+                "week": 2,
+                "brief": "Build week: +1 set on squat and deadlift, RPE +0.5 across the board."
+              },
+              {
+                "kind": "build-week",
+                "week": 3,
+                "brief": "Peak week: heavier and lower reps, RPE 8 to 8.5 on the main lifts."
+              },
+              {
+                "kind": "build-week",
+                "week": 4,
+                "brief": "Deload: about 40% less volume at RPE 6."
+              }
+            ]
+          }
+        }
+      ],
+      "delayMs": 600
+    },
+    {
+      "text": null,
+      "calls": [
+        {
+          "callId": "par-7",
+          "name": "showWeekSummary",
+          "arguments": {
+            "week": 1
+          }
+        }
+      ],
+      "delayMs": 400
+    },
+    {
+      "text": "All 4 weeks are in: two build weeks, a peak and a deload. Drag a day or edit a cell and I'll rebalance.",
+      "calls": [],
+      "delayMs": 400
+    }
+  ],
+  "subagents": {
+    "build-day:1:Mon": [
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_0",
+            "name": "searchExercises",
+            "arguments": {
+              "pattern": "squat",
+              "equipment": "barbell"
+            }
+          },
+          {
+            "callId": "call_1",
+            "name": "searchExercises",
+            "arguments": {
+              "pattern": "hinge"
+            }
+          }
+        ],
+        "delayMs": 700
+      },
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_2",
+            "name": "writeDay",
+            "arguments": {
+              "focus": "Lower",
+              "exercises": [
+                {
+                  "exerciseId": "back-squat",
+                  "sets": 4,
+                  "reps": "5",
+                  "rpe": 7.5,
+                  "note": ""
+                },
+                {
+                  "exerciseId": "romanian-deadlift",
+                  "sets": 3,
+                  "reps": "8",
+                  "rpe": 7,
+                  "note": ""
+                },
+                {
+                  "exerciseId": "split-squat",
+                  "sets": 3,
+                  "reps": "8-10",
+                  "rpe": 7,
+                  "note": ""
+                },
+                {
+                  "exerciseId": "plank",
+                  "sets": 3,
+                  "reps": "30s",
+                  "rpe": 6,
+                  "note": ""
+                }
+              ]
+            }
+          }
+        ],
+        "delayMs": 1100
+      },
+      {
+        "text": "Squat-led lower day: back squat 4x5, then RDLs, split squats and a plank.",
+        "calls": [],
+        "delayMs": 400
+      }
+    ],
+    "build-day:1:Wed": [
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_0",
+            "name": "searchExercises",
+            "arguments": {
+              "pattern": "vertical-push"
+            }
+          }
+        ],
+        "delayMs": 900
+      },
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_1",
+            "name": "searchExercises",
+            "arguments": {
+              "pattern": "horizontal-pull",
+              "maxShoulderStress": "low"
+            }
+          }
+        ],
+        "delayMs": 900
+      },
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_2",
+            "name": "writeDay",
+            "arguments": {
+              "focus": "Upper",
+              "exercises": [
+                {
+                  "exerciseId": "overhead-press",
+                  "sets": 4,
+                  "reps": "5",
+                  "rpe": 7,
+                  "note": ""
+                },
+                {
+                  "exerciseId": "chest-supported-row",
+                  "sets": 4,
+                  "reps": "8",
+                  "rpe": 7,
+                  "note": ""
+                },
+                {
+                  "exerciseId": "dumbbell-floor-press",
+                  "sets": 3,
+                  "reps": "8-10",
+                  "rpe": 7,
+                  "note": ""
+                },
+                {
+                  "exerciseId": "face-pull",
+                  "sets": 3,
+                  "reps": "12-15",
+                  "rpe": 7,
+                  "note": ""
+                }
+              ]
+            }
+          }
+        ],
+        "delayMs": 1300
+      },
+      {
+        "text": "Upper day built on the overhead press she asked for, balanced with rows and face pulls.",
+        "calls": [],
+        "delayMs": 400
+      }
+    ],
+    "build-day:1:Fri": [
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_0",
+            "name": "searchExercises",
+            "arguments": {
+              "pattern": "hinge",
+              "equipment": "trap-bar"
+            }
+          }
+        ],
+        "delayMs": 500
+      },
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_1",
+            "name": "searchExercises",
+            "arguments": {
+              "pattern": "carry"
+            }
+          },
+          {
+            "callId": "call_2",
+            "name": "searchExercises",
+            "arguments": {
+              "pattern": "vertical-pull"
+            }
+          }
+        ],
+        "delayMs": 800
+      },
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_3",
+            "name": "writeDay",
+            "arguments": {
+              "focus": "Full body",
+              "exercises": [
+                {
+                  "exerciseId": "trap-bar-deadlift",
+                  "sets": 4,
+                  "reps": "5",
+                  "rpe": 7.5,
+                  "note": ""
+                },
+                {
+                  "exerciseId": "bench-press",
+                  "sets": 3,
+                  "reps": "6",
+                  "rpe": 7,
+                  "note": ""
+                },
+                {
+                  "exerciseId": "lat-pulldown",
+                  "sets": 3,
+                  "reps": "10",
+                  "rpe": 7,
+                  "note": ""
+                },
+                {
+                  "exerciseId": "farmer-carry",
+                  "sets": 3,
+                  "reps": "30s",
+                  "rpe": 7,
+                  "note": ""
+                }
+              ]
+            }
+          }
+        ],
+        "delayMs": 1000
+      },
+      {
+        "text": "Full-body day: trap-bar deadlift 4x5, bench, pulldowns and farmer carries.",
+        "calls": [],
+        "delayMs": 300
+      }
+    ],
+    "injury-screen": [
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_0",
+            "name": "searchExercises",
+            "arguments": {
+              "pattern": "vertical-push"
+            }
+          }
+        ],
+        "delayMs": 600
+      },
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_1",
+            "name": "searchExercises",
+            "arguments": {
+              "pattern": "vertical-push",
+              "maxShoulderStress": "medium"
+            }
+          }
+        ],
+        "delayMs": 800
+      },
+      {
+        "text": "overhead-press -> landmine-press: high shoulder stress, and her left shoulder is sore overhead.\nbench-press is medium: fine below shoulder height, keep it.",
+        "calls": [],
+        "delayMs": 900
+      }
+    ],
+    "build-week:2": [
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_0",
+            "name": "writeWeek",
+            "arguments": {
+              "days": [
+                {
+                  "day": "Mon",
+                  "focus": "Lower",
+                  "exercises": [
+                    {
+                      "exerciseId": "back-squat",
+                      "sets": 5,
+                      "reps": "5",
+                      "rpe": 8,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "romanian-deadlift",
+                      "sets": 3,
+                      "reps": "8",
+                      "rpe": 7.5,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "split-squat",
+                      "sets": 3,
+                      "reps": "8-10",
+                      "rpe": 7.5,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "plank",
+                      "sets": 3,
+                      "reps": "40s",
+                      "rpe": 6.5,
+                      "note": ""
+                    }
+                  ]
+                },
+                {
+                  "day": "Wed",
+                  "focus": "Upper",
+                  "exercises": [
+                    {
+                      "exerciseId": "landmine-press",
+                      "sets": 4,
+                      "reps": "6",
+                      "rpe": 7.5,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "chest-supported-row",
+                      "sets": 4,
+                      "reps": "8",
+                      "rpe": 7.5,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "dumbbell-floor-press",
+                      "sets": 3,
+                      "reps": "8-10",
+                      "rpe": 7.5,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "face-pull",
+                      "sets": 3,
+                      "reps": "12-15",
+                      "rpe": 7,
+                      "note": ""
+                    }
+                  ]
+                },
+                {
+                  "day": "Fri",
+                  "focus": "Full body",
+                  "exercises": [
+                    {
+                      "exerciseId": "trap-bar-deadlift",
+                      "sets": 5,
+                      "reps": "5",
+                      "rpe": 8,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "bench-press",
+                      "sets": 3,
+                      "reps": "6",
+                      "rpe": 7.5,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "lat-pulldown",
+                      "sets": 3,
+                      "reps": "10",
+                      "rpe": 7.5,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "farmer-carry",
+                      "sets": 3,
+                      "reps": "40s",
+                      "rpe": 7,
+                      "note": ""
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "delayMs": 1100
+      },
+      {
+        "text": "Week 2: same lifts, +1 set on squat and deadlift, RPE up half a point.",
+        "calls": [],
+        "delayMs": 300
+      }
+    ],
+    "build-week:3": [
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_0",
+            "name": "writeWeek",
+            "arguments": {
+              "days": [
+                {
+                  "day": "Mon",
+                  "focus": "Lower",
+                  "exercises": [
+                    {
+                      "exerciseId": "back-squat",
+                      "sets": 5,
+                      "reps": "4",
+                      "rpe": 8.5,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "romanian-deadlift",
+                      "sets": 4,
+                      "reps": "6",
+                      "rpe": 8,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "split-squat",
+                      "sets": 3,
+                      "reps": "8",
+                      "rpe": 8,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "plank",
+                      "sets": 3,
+                      "reps": "45s",
+                      "rpe": 7,
+                      "note": ""
+                    }
+                  ]
+                },
+                {
+                  "day": "Wed",
+                  "focus": "Upper",
+                  "exercises": [
+                    {
+                      "exerciseId": "landmine-press",
+                      "sets": 4,
+                      "reps": "5",
+                      "rpe": 8,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "chest-supported-row",
+                      "sets": 4,
+                      "reps": "6",
+                      "rpe": 8,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "dumbbell-floor-press",
+                      "sets": 3,
+                      "reps": "8",
+                      "rpe": 8,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "face-pull",
+                      "sets": 3,
+                      "reps": "12-15",
+                      "rpe": 7,
+                      "note": ""
+                    }
+                  ]
+                },
+                {
+                  "day": "Fri",
+                  "focus": "Full body",
+                  "exercises": [
+                    {
+                      "exerciseId": "trap-bar-deadlift",
+                      "sets": 5,
+                      "reps": "3",
+                      "rpe": 8.5,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "bench-press",
+                      "sets": 4,
+                      "reps": "5",
+                      "rpe": 8,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "lat-pulldown",
+                      "sets": 3,
+                      "reps": "8",
+                      "rpe": 8,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "farmer-carry",
+                      "sets": 3,
+                      "reps": "45s",
+                      "rpe": 7.5,
+                      "note": ""
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "delayMs": 1600
+      },
+      {
+        "text": "Week 3 peaks: heavier, lower reps, RPE 8 to 8.5 on the main lifts.",
+        "calls": [],
+        "delayMs": 300
+      }
+    ],
+    "build-week:4": [
+      {
+        "text": null,
+        "calls": [
+          {
+            "callId": "call_0",
+            "name": "writeWeek",
+            "arguments": {
+              "days": [
+                {
+                  "day": "Mon",
+                  "focus": "Lower",
+                  "exercises": [
+                    {
+                      "exerciseId": "back-squat",
+                      "sets": 3,
+                      "reps": "5",
+                      "rpe": 6,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "romanian-deadlift",
+                      "sets": 2,
+                      "reps": "8",
+                      "rpe": 6,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "split-squat",
+                      "sets": 2,
+                      "reps": "8",
+                      "rpe": 6,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "plank",
+                      "sets": 2,
+                      "reps": "30s",
+                      "rpe": 5,
+                      "note": ""
+                    }
+                  ]
+                },
+                {
+                  "day": "Wed",
+                  "focus": "Upper",
+                  "exercises": [
+                    {
+                      "exerciseId": "landmine-press",
+                      "sets": 3,
+                      "reps": "6",
+                      "rpe": 6,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "chest-supported-row",
+                      "sets": 3,
+                      "reps": "8",
+                      "rpe": 6,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "dumbbell-floor-press",
+                      "sets": 2,
+                      "reps": "8",
+                      "rpe": 6,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "face-pull",
+                      "sets": 2,
+                      "reps": "12-15",
+                      "rpe": 6,
+                      "note": ""
+                    }
+                  ]
+                },
+                {
+                  "day": "Fri",
+                  "focus": "Full body",
+                  "exercises": [
+                    {
+                      "exerciseId": "trap-bar-deadlift",
+                      "sets": 3,
+                      "reps": "5",
+                      "rpe": 6,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "bench-press",
+                      "sets": 2,
+                      "reps": "6",
+                      "rpe": 6,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "lat-pulldown",
+                      "sets": 2,
+                      "reps": "10",
+                      "rpe": 6,
+                      "note": ""
+                    },
+                    {
+                      "exerciseId": "farmer-carry",
+                      "sets": 2,
+                      "reps": "30s",
+                      "rpe": 6,
+                      "note": ""
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "delayMs": 900
+      },
+      {
+        "text": "Week 4 is a deload: about 40% less volume at RPE 6.",
+        "calls": [],
+        "delayMs": 300
+      }
+    ]
+  }
+}

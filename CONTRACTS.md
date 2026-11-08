@@ -168,6 +168,7 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 | `showProgressCard` | frontend render | `{ lift, points: [{ week, kg }], topSet, est1rm, goal?, trend: { tone: "ok"\|"flag", label } }` | n/a | `ProgressCard` | `useFrontendTool` (`followUp: false`, render) |
 | `proposeChanges` | frontend human in the loop | `{ week, rows: [{ cell, before, after }], reason? }` (1 to 20 rows; `cell` like `"Day 3 · A1"`) | `{ approved }` via `respond()` | `ProgramDiffCard` | `useHumanInTheLoop` |
 | `showHowTo` | .NET backend, rendered by the web app | `{ ui }`: a tree of catalog nodes (`Card`, `Heading`, `Stepper`, `PoseFigure`, `TempoStrip`, `Callout`); schema in `web/src/components/declarative/schema.ts` | `"Shown to the trainer in the chat."`, or an `Error:` string for a tree that breaks the rules | `HowToCard` | `useRenderTool` |
+| `runSubagents` | .NET backend, **only on runs with the Sub-agents toggle on** (section 11) | `{ clientId?, goal?, daysPerWeek?, tasks: [{ kind, brief, week?, day?, focus? }] }` (1 to 7 tasks) | `{ reports, riskyLifts, next, program }`, or an `Error:` string | `SubagentBoard` | `useRenderTool` |
 
 - `showProgressCard` and `proposeChanges` were added in Tasks 2, 3 and 8 of `PT_COACH_BUILD_PLAN.md`. `proposeChanges` only asks; it changes nothing. On approve the agent writes the rows with `updateProgram`.
 - Why `useFrontendTool` for the render tools: in CopilotKit 1.85.0 `useRenderTool` never sends the tool definition to the model, and `useComponent` gives its render no status (so no streaming skeleton).
@@ -189,6 +190,8 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 7. Treat the program state sent by the client as the truth. The trainer may have edited it. Rebalance from it; never revert trainer edits without saying so.
 8. Use `showProgressCard` when the trainer asks how a lift is going. Any change to days already in the program goes to the trainer first: trainer requests (e.g. "deload next week", "swap for home gym") and the agent's own rebalancing after a trainer edit (rule 7). Call `proposeChanges` with one row per changed cell before writing anything; on approve write exactly those rows with `updateProgram`, on reject change nothing. Only new days and weeks (building the program) and approved swaps (rule 4) are written directly.
 9. Keep chat text short. The grid and the cards carry the detail.
+
+With the Sub-agents toggle on, a system message (`SubagentStreamAgent.Instructions`) replaces rule 3 for building: week 1 in one `runSubagents` call (a `build-day` per day, plus `injury-screen` for an injured client), flag and `proposeSwap` the `riskyLifts` it returns (rule 4), then, once swaps are answered and written, the later weeks in one more call (a `build-week` per week). See section 11.
 
 ---
 
@@ -253,6 +256,7 @@ In `agent/appsettings.json`. Ids chosen by Nick (all three support tool calling 
 - Key: lowercase, `^[a-z][a-z0-9-]*$`. It is the URL segment, the CopilotKit agent id and the dropdown value.
 - Dropdown text and chat header text: `"{label} ({modelId})"`, e.g. "Qwen (qwen/qwen3.8-flash)" (`modelDisplayName()`).
 - **Reserved key `replay`**: backed by `ReplayChatClient`, which plays `agent/Replay/demo-run.json` turn by turn per thread (backend tools still run). No network call, no key. Record a new run by setting `Replay:RecordDirectory` (see README).
+  With the Sub-agents toggle on it plays `agent/Replay/demo-run-parallel.json` instead: `{ coach: [turns], subagents: { "<task key>": [turns] } }`, task keys `build-day:<week>:<day>`, `build-week:<week>`, `injury-screen`. A turn may carry `delayMs` (think time before it). The recorder writes toggle-on runs to `<thread>.parallel.json` in that format.
 
 ---
 
@@ -277,6 +281,9 @@ Playwright depends on these `data-testid` values (`TEST_IDS` in `contracts.ts`).
 | `swap-approve`, `swap-reject` | its two buttons | |
 | `program-diff-card` | `ProgramDiffCard` root | `data-state` = `pending`/`approved`/`rejected` |
 | `voice-input` | chat mic button (only when transcription is available) | |
+| `subagents-toggle` | Sub-agents switch in the chat header (`role="switch"`) | `aria-checked` |
+| `subagent-board` | `SubagentBoard` root (one per `runSubagents` call) | `data-state` = `running`/`done`, `data-count` = number of sub-agents |
+| `subagent-lane` | one sub-agent's row | `data-subagent-run-id`, `data-kind` = `build-day`/`build-week`/`injury-screen`, `data-status` = `queued`/`running`/`done`/`error` |
 
 ---
 
@@ -338,5 +345,44 @@ Checked against the MAF .NET docs (AG-UI state management page, updated 2026-10-
 | E | `web/src/components/genui/` (and adds its components to `Styleguide.tsx`) | Sonnet |
 | F | `web/src/components/program-grid/`, plus the agent's state wiring files | Opus |
 | Phase 3 | `e2e/`, `README.md`, the `replay` client | lead / Sonnet / Haiku |
+| Sub-agents | `agent/Subagents/`, `web/src/components/subagents/`, `agent/Replay/demo-run-parallel.json` (section 11) | Opus |
 
 Lanes C and B meet at `/styleguide`: C exports `web/src/components/ui/Styleguide.tsx` (default export). B renders it when `location.pathname === "/styleguide"`. No router.
+
+---
+
+## 11. Parallel sub-agents
+
+Added 2026-11-08 with Nick's OK: an engineer-facing showcase of AG-UI 1.0's subagent events, end to end from .NET to the browser. Off by default; the 60 second demo (toggle off) is unchanged.
+
+**Switch.** The chat header's "Sub-agents" toggle (`subagents-toggle`) is sent with every run as an AG-UI context entry via `useAgentContext`: description `"Parallel sub-agents"` (`SUBAGENTS.contextDescription`, C# `SubagentContext.Description`), value `{"enabled":true|false}`. `?subagents` in the URL starts it on; otherwise the browser remembers the last choice (`localStorage`). Flipping it keeps the thread.
+
+**Agent.** `SubagentStreamAgent` is the outermost wrapper of every coach agent (`AddSubagents()`, registered last). On a run with the toggle on it adds `runSubagents` to that run's tools (MAF unions run-level tools with the agent's), adds the instructions in section 4, and merges a per-run event channel into the stream so sub-agent events go out while the coach's `runSubagents` call is still running. Toggle off: the run passes straight through.
+
+**Tasks.** Each task is one sub-agent, all running at once on the coach's own model (a `ChatClientAgent` with its own prompt, `SubagentPrompts`):
+
+| `kind` | Needs | Tools | Writes |
+| --- | --- | --- | --- |
+| `build-day` | `week`, `day`, `focus` | `searchExercises`, `writeDay { focus, exercises }` | its own `(week, day)` only |
+| `build-week` | `week` 2 to 12, and week 1 already in the grid | `searchExercises`, `writeWeek { days: [{ day, focus, exercises }] }` | its own `week` only |
+| `injury-screen` | | `searchExercises` | nothing; its answer lists `risky id -> alternative id: reason` |
+
+- At most one task per day or week, at most one `injury-screen`, briefs at most 400 characters (`RunSubagentsTool.Problem`). A bad list is rejected before anything starts.
+- `writeDay`/`writeWeek` scope is fixed by the tool, not the model, so parallel builders can't overwrite each other. Each turns into an `updateProgram` call on the run's shared working copy (same validation, section 1a).
+- Before the fan-out, `clientId`/`goal`/`daysPerWeek` are applied and each new `build-day` day is created empty, in weekday order, so the grid's columns don't follow finishing order. Existing days are not touched until their builder writes.
+- `riskyLifts` (rule 4) are worked out by the server from what was written, not by the model.
+- A sub-agent that fails, times out (3 minutes) or finishes without writing reports `SUBAGENT_ERROR`; the others carry on, and `next` tells the coach to write the missing days itself.
+
+**Wire format** (AG-UI 1.0, `AGUIStreamOptions.MapContent` emits them as built):
+
+1. The coach's `TOOL_CALL_START/ARGS/END` for `runSubagents`, then a `STATE_SNAPSHOT` with the client and the empty columns.
+2. Per sub-agent, `SUBAGENT_STARTED { subagentRunId, name, description, parentToolCallId }`. `name` is `day-builder`, `week-builder` or `injury-screen`; `description` is the lane title (`Week 1 · Mon · Lower`, `Week 2`, `Injury screen`); `parentToolCallId` is the `runSubagents` call.
+3. Everything the sub-agent does, each event carrying its `subagentRunId`: its brief as a `user` `TEXT_MESSAGE_*`, its words as `assistant` `TEXT_MESSAGE_*`, its calls as `TOOL_CALL_START/ARGS/END` + `TOOL_CALL_RESULT` (ids prefixed `<subagentRunId>-`, results trimmed to 2000 characters), and a full `STATE_SNAPSHOT` per write.
+4. `SUBAGENT_FINISHED { subagentRunId, result }` (`result` is a `SubagentReport`) or `SUBAGENT_ERROR { subagentRunId, message, code }`.
+5. The coach's `TOOL_CALL_RESULT` for `runSubagents`: `{ reports: SubagentReport[], riskyLifts, next, program }`.
+
+`SubagentReport`: `{ subagentRunId, kind, title, status: "done"|"error", summary, week?, day?, wrote?, riskyLifts?, durationMs, inputTokens?, outputTokens? }` (`SubagentReportSchema`, C# `SubagentReport`).
+
+**Web.** `SubagentFeedProvider` (per chat thread) subscribes to the agent with `onEvent` and folds the events into lanes without stopping them, so CopilotKit and the Web Inspector still see every event. `useRenderTool("runSubagents")` draws a `SubagentBoard` per call, matched on `parentToolCallId`; with no live lanes it falls back to the result's `reports`. Messages with a `subagentRunId` stay out of the chat transcript and are dropped from the request body (`messageFilter`), so the coach never reads a sub-agent's turns as its own. The status strip ignores sub-agent tool calls.
+
+**Telemetry.** Each sub-agent runs under `UseOpenTelemetry`, so in the Aspire trace its `invoke_agent subagent-<name>` span (with its own `chat` and `execute_tool` spans) sits under the coach's `execute_tool runSubagents` → `run_subagents` span, side by side with its siblings.

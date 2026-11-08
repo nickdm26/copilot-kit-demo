@@ -47,6 +47,7 @@ builder.Services.AddSingleton<CoachAgentBuilder>();
 builder.Services.AddProgramState(); // Lane F: updateProgram + shared program state (CONTRACTS section 9, Plan A)
 builder.Services.Configure<TelemetryOptions>(builder.Configuration.GetSection(TelemetryOptions.SectionName));
 builder.Services.AddHowTo(); // Task 9: showHowTo, the declarative how-to tool
+builder.Services.AddSubagents(); // Parallel sub-agents (CONTRACTS section 11). Last: its wrapper must be outermost.
 builder.Services.Configure<TranscriptionOptions>(builder.Configuration.GetSection(TranscriptionOptions.SectionName));
 // The chat mic button (POST /transcribe). The service-defaults handler would retry this paid POST and give each try
 // only 10s; OpenRouter allows 60s per transcription, so no retries and room for that.

@@ -72,6 +72,125 @@ public class ReplayTests
         }
     }
 
+    private static ChatOptions ParallelOptionsFor(string threadId) =>
+        new RunAgentInput
+        {
+            ThreadId = threadId,
+            RunId = Guid.NewGuid().ToString(),
+            Context = [new AGUIContext { Description = PtCoach.Agent.Models.SubagentContext.Description, Value = """{"enabled":true}""" }],
+        }.ToChatRequestContext(JsonSerializerOptions.Web, null).ChatOptions;
+
+    private static ChatOptions SubagentOptions(string threadId, string task) =>
+        new() { AdditionalProperties = new() { [ReplayJson.SubagentKey] = $"{threadId}|{task}" } };
+
+    [Fact]
+    public async Task Parallel_runs_and_each_subagent_play_their_own_recordings()
+    {
+        var parallel = new ParallelRecording(
+            [new("Coach in parallel mode", [])],
+            new Dictionary<string, IReadOnlyList<ReplayTurn>>
+            {
+                ["build-day:1:Mon"] = [new("Mon 1", []), new("Mon 2", [])],
+                ["injury-screen"] = [new("Screen 1", [])],
+            });
+        var client = new ReplayChatClient(Turns, TimeSpan.Zero, TimeSpan.Zero, parallel);
+        var ct = TestContext.Current.CancellationToken;
+        Task<ChatResponse> Ask(ChatOptions o) => client.GetResponseAsync([new ChatMessage(ChatRole.User, "hi")], o, ct);
+
+        Assert.Equal("Coach in parallel mode", (await Ask(ParallelOptionsFor("t"))).Text);
+        Assert.Equal("Hello", (await Ask(OptionsFor("t"))).Text); // the toggle-off recording keeps its own position
+        Assert.Equal("Mon 1", (await Ask(SubagentOptions("t", "build-day:1:Mon"))).Text);
+        Assert.Equal("Screen 1", (await Ask(SubagentOptions("t", "injury-screen"))).Text);
+        Assert.Equal("Mon 2", (await Ask(SubagentOptions("t", "build-day:1:Mon"))).Text);
+        Assert.Equal("Mon 1", (await Ask(SubagentOptions("other-thread", "build-day:1:Mon"))).Text);
+        Assert.Equal(ReplayChatClient.NoSubagentRecording, (await Ask(SubagentOptions("t", "build-week:9"))).Text);
+    }
+
+    [Fact]
+    public async Task Recorder_writes_parallel_runs_in_the_parallel_format()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"replay-test-{Guid.NewGuid():N}");
+        try
+        {
+            var recorder = new RecordingChatClient(Client(), dir);
+            var ct = TestContext.Current.CancellationToken;
+            await recorder.GetResponseAsync([new ChatMessage(ChatRole.User, "hi")], ParallelOptionsFor("rec"), ct);
+            await recorder.GetResponseAsync([new ChatMessage(ChatRole.User, "hi")], SubagentOptions("rec", "injury-screen"), ct);
+
+            var file = Assert.Single(Directory.GetFiles(dir));
+            Assert.EndsWith("rec.parallel.json", file);
+            var recording = JsonSerializer.Deserialize<ParallelRecording>(File.ReadAllText(file), ReplayJson.Options)!;
+            Assert.Equal("Hello", Assert.Single(recording.Coach).Text);
+            Assert.Single(recording.Subagents["injury-screen"]);
+        }
+        finally
+        {
+            if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// Plays the shipped parallel recording's writes in order (approve path) against the real seed: every write and both
+    /// runSubagents calls must be accepted, ending with 4 full weeks and no flags.
+    /// </summary>
+    [Fact]
+    public void Shipped_parallel_recording_is_valid_against_the_real_seed()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Replay", "demo-run-parallel.json");
+        var recording = JsonSerializer.Deserialize<ParallelRecording>(File.ReadAllText(path), ReplayJson.Options)!;
+        var seed = new PtCoach.Agent.Seed.SeedStore(Path.Combine(AppContext.BaseDirectory, "Seed"));
+        var exerciseIds = seed.Exercises.Select(e => e.Id).ToHashSet();
+        var clientIds = seed.Clients.Select(c => c.Id).ToHashSet();
+        var state = PtCoach.Agent.Models.ProgramState.Empty("");
+
+        void Apply(PtCoach.Agent.Models.UpdateProgramArgs args)
+        {
+            state = PtCoach.Agent.State.ProgramUpdater.Apply(state, args);
+            Assert.Empty(PtCoach.Agent.State.ProgramStateValidator.Validate(state, exerciseIds, clientIds));
+        }
+
+        T Args<T>(ReplayCall c) =>
+            JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(c.Arguments), PtCoach.Agent.Models.ContractJson.Options)!;
+
+        var runs = 0;
+        foreach (var call in recording.Coach.SelectMany(t => t.Calls))
+        {
+            if (call.Name == "updateProgram") Apply(Args<PtCoach.Agent.Models.UpdateProgramArgs>(call));
+            if (call.Name != "runSubagents") continue;
+            runs++;
+            var args = Args<PtCoach.Agent.Models.RunSubagentsArgs>(call);
+            Apply(new(args.ClientId, args.Goal, args.DaysPerWeek));
+            Assert.Null(PtCoach.Agent.Subagents.RunSubagentsTool.Problem(args.Tasks, state));
+            foreach (var task in args.Tasks)
+            {
+                var key = task.Kind switch
+                {
+                    PtCoach.Agent.Models.SubagentKind.BuildDay => $"build-day:{task.Week}:{task.Day}",
+                    PtCoach.Agent.Models.SubagentKind.BuildWeek => $"build-week:{task.Week}",
+                    _ => "injury-screen",
+                };
+                var calls = recording.Subagents[key].SelectMany(t => t.Calls).ToList();
+                Assert.Equal(task.Kind == PtCoach.Agent.Models.SubagentKind.InjuryScreen ? 0 : 1, calls.Count(c => c.Name is "writeDay" or "writeWeek"));
+                foreach (var w in calls.Where(c => c.Name == "writeDay"))
+                {
+                    var d = Args<PtCoach.Agent.Models.WriteDayArgs>(w);
+                    Apply(new(Days: [new(task.Week!.Value, task.Day!.Value, d.Focus, d.Exercises)]));
+                }
+                foreach (var w in calls.Where(c => c.Name == "writeWeek"))
+                {
+                    var wk = Args<PtCoach.Agent.Models.WriteWeekArgs>(w);
+                    Apply(new(Days: [.. wk.Days.Select(d => new PtCoach.Agent.Models.ProgramDayUpsert(task.Week!.Value, d.Day, d.Focus, d.Exercises))]));
+                }
+            }
+        }
+
+        Assert.Equal(2, runs);
+        Assert.Equal([1, 2, 3, 4], state.Weeks.Select(w => w.Number));
+        Assert.All(state.Weeks, w => Assert.Equal(3, w.Days.Count));
+        Assert.Empty(state.Flags);
+        Assert.DoesNotContain(state.Weeks.SelectMany(w => w.Days).SelectMany(d => d.Exercises), e => e.ExerciseId == "overhead-press");
+    }
+
     [Fact]
     public void Shipped_recording_loads()
     {

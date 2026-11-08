@@ -14,6 +14,12 @@ public static class ToolNames
     public const string ProposeSwap = "proposeSwap";
     public const string ProposeChanges = "proposeChanges";
     public const string ShowHowTo = "showHowTo";
+
+    // Parallel sub-agents (CONTRACTS section 11). runSubagents is the coach's tool, only on runs with the toggle on.
+    // writeDay and writeWeek belong to the sub-agents; the coach never sees them.
+    public const string RunSubagents = "runSubagents";
+    public const string WriteDay = "writeDay";
+    public const string WriteWeek = "writeWeek";
 }
 
 public sealed record GetClientArgs(string ClientId);

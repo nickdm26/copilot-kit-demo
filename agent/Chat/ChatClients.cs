@@ -35,6 +35,9 @@ public sealed class ReplayOptions
     /// <summary>When set, live models record every turn here (one file per thread), to make a new replay recording.</summary>
     public string? RecordDirectory { get; set; }
 
+    /// <summary>What the <c>replay</c> model plays on runs with parallel sub-agents on (CONTRACTS section 11).</summary>
+    public string ParallelPath { get; set; } = System.IO.Path.Combine(AppContext.BaseDirectory, "Replay", "demo-run-parallel.json");
+
     public int TextDelayMs { get; set; } = 15;
     public int CallDelayMs { get; set; } = 400;
 }
@@ -57,7 +60,8 @@ public sealed class OpenRouterChatClientFactory(
         if (modelKey == ModelKeys.Replay)
         {
             // No network call and no key needed.
-            return Instrument(ReplayChatClient.Load(r.Path, TimeSpan.FromMilliseconds(r.TextDelayMs), TimeSpan.FromMilliseconds(r.CallDelayMs)));
+            return Instrument(ReplayChatClient.Load(
+                r.Path, TimeSpan.FromMilliseconds(r.TextDelayMs), TimeSpan.FromMilliseconds(r.CallDelayMs), r.ParallelPath));
         }
 
         var o = openRouter.Value;

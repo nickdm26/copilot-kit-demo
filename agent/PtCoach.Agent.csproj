@@ -20,5 +20,7 @@
     <Content Include="..\shared\seed\exercises.json;..\shared\seed\clients.json" Link="Seed\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <!-- The run the "replay" model plays back (recorded from a live model). -->
     <None Update="Replay\demo-run.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- What it plays with parallel sub-agents on (hand-written, CONTRACTS section 11). -->
+    <None Update="Replay\demo-run-parallel.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

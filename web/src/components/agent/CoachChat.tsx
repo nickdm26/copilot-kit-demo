@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -22,6 +23,7 @@ import { ConnectedAgentStatusStrip } from "./ConnectedAgentStatusStrip";
 import { ConnectedModelPicker } from "./ConnectedModelPicker";
 import { ConnectedSuggestionChips, starterSuggestions } from "./ConnectedSuggestionChips";
 import { SystemMessage } from "./SystemMessage";
+import { SubagentFeedProvider, SubagentsToggle, isSubagentMessage } from "../subagents";
 import { useSendUserMessage } from "./useSendUserMessage";
 
 export interface CoachChatProps {
@@ -56,16 +58,20 @@ export function CoachChat({ showModelPicker, className }: CoachChatProps) {
       aria-label="Coach agent chat"
       className={cx("flex h-full min-h-0 flex-col overflow-hidden bg-surface", className)}
     >
-      <header className="flex items-center justify-between gap-2 border-b border-border px-3.5 py-2.5">
-        <div className="min-w-0">
-          <h2 className="font-heading text-xl uppercase leading-none tracking-wide">Coach agent</h2>
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-3.5 py-2.5">
+        <div className="min-w-0 flex-1 basis-[7.5rem]">
+          <h2 className="whitespace-nowrap font-heading text-xl uppercase leading-none tracking-wide">Coach agent</h2>
           <p className="mt-1 truncate text-xs text-ink-muted">
             {client?.name ?? ""}
             {client ? " · " : ""}
             <span data-testid={TEST_IDS.activeModel}>{activeModel ? modelDisplayName(activeModel) : "Loading..."}</span>
           </p>
         </div>
-        {showModelPicker ? <ConnectedModelPicker className="w-[220px] max-w-[50%] shrink-0" /> : null}
+        {/* Title and controls share a row when the pane is wide enough (the bases add up to ~24rem), else wrap. */}
+        <div className={cx("flex min-w-0 items-center justify-end gap-2", showModelPicker && "flex-1 basis-[16rem]")}>
+          <SubagentsToggle />
+          {showModelPicker ? <ConnectedModelPicker className="min-w-0 max-w-[220px] flex-1" /> : null}
+        </div>
       </header>
       <ConnectedAgentStatusStrip />
       <div className="min-h-0 flex-1 overflow-hidden [&>*]:h-full">
@@ -111,6 +117,7 @@ function BoundChat({
   );
 
   return (
+    <SubagentFeedProvider agent={agent}>
     <EmptyStateContext value={emptyState}>
       <CopilotChat
         agentId={agentId}
@@ -173,16 +180,22 @@ function BoundChat({
         }}
       />
     </EmptyStateContext>
+    </SubagentFeedProvider>
   );
 }
 
 const EmptyStateContext = createContext<ReactNode>(null);
 
-/** The chat's message list, or our empty state before the first message. */
+/**
+ * The chat's message list, or our empty state before the first message. Sub-agent messages (their briefs, tool calls
+ * and words, kept by AG-UI with a subagentRunId) are left out: each sub-agent's lane in the SubagentBoard shows them.
+ */
 function MessageViewWithEmptyState(props: CopilotChatMessageViewProps) {
   const empty = useContext(EmptyStateContext);
-  if ((props.messages?.length ?? 0) === 0 && !props.isRunning) return <>{empty}</>;
-  return <CopilotChatMessageView {...props} />;
+  const all = props.messages;
+  const messages = useMemo(() => (all && all.some(isSubagentMessage) ? all.filter((m) => !isSubagentMessage(m)) : all), [all]);
+  if ((messages?.length ?? 0) === 0 && !props.isRunning) return <>{empty}</>;
+  return <CopilotChatMessageView {...props} messages={messages} />;
 }
 
 const iconButton = cx(
