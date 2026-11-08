@@ -93,6 +93,10 @@ public sealed class UpdateProgramTool(ProgramStateStore store, ILogger<UpdatePro
         }
         """).RootElement.Clone();
 
+    /// <summary>The schema of one day's <c>exercises</c> array, shared with the sub-agents' writeDay and writeWeek tools.</summary>
+    public static JsonElement ExercisesSchema { get; } = Schema.GetProperty("properties").GetProperty("days")
+        .GetProperty("items").GetProperty("properties").GetProperty("exercises").Clone();
+
     public override string Name => ToolNames.UpdateProgram;
 
     public override string Description =>

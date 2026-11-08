@@ -1,5 +1,6 @@
 import { CopilotKitProvider, useAgentContext } from "@copilotkit/react-core/v2";
-import { API, TEST_IDS } from "./lib/contracts";
+import { API, SUBAGENTS, TEST_IDS } from "./lib/contracts";
+import { dropSubagentMessages } from "./components/subagents";
 import { SessionProvider, useSession } from "./lib/session";
 import { MOBILE_QUERY, WIDE_QUERY, useMediaQuery } from "./lib/useMediaQuery";
 import Styleguide from "./components/ui/Styleguide";
@@ -47,7 +48,7 @@ function ClientPicker({ className }: { className?: string }) {
 }
 
 function Shell() {
-  const { clientId, clients } = useSession();
+  const { clientId, clients, subagents } = useSession();
   const client = clients.find((c) => c.id === clientId);
   const isMobile = useMediaQuery(MOBILE_QUERY);
   // The profile sidebar (with its own client picker) only fits from 1024px.
@@ -57,6 +58,8 @@ function Shell() {
     description: "The client the trainer has selected (Client JSON)",
     value: client ? JSON.parse(JSON.stringify(client)) : { id: clientId },
   });
+  // The "Sub-agents" toggle. The agent reads this entry to offer runSubagents on the run (CONTRACTS section 11).
+  useAgentContext({ description: SUBAGENTS.contextDescription, value: { enabled: subagents } });
 
   // Phones: both pickers in the header so they're on every tab. Desktop: the model picker sits in the chat header,
   // and the client picker in the profile sidebar (or here when the sidebar doesn't fit).
@@ -115,6 +118,11 @@ function dropReasoningFromRequest<T extends { role: string }>(messages: T[]): T[
   return messages.filter((m) => m.role !== "reasoning");
 }
 
+/** Reasoning (above) and the sub-agents' own transcripts never go back to the coach (see dropSubagentMessages). */
+function requestMessages<T extends { role: string }>(messages: T[]): T[] {
+  return dropSubagentMessages(dropReasoningFromRequest(messages));
+}
+
 /**
  * The CopilotKit Web Inspector is a development tool: it shows the AG-UI event stream, agent state and reasoning.
  * It is opt-in (`?inspector`) because its floating launcher sits above the page and swallows clicks on whatever is
@@ -128,7 +136,7 @@ export default function App() {
   return (
     <CopilotKitProvider
       runtimeUrl={API.copilotkit}
-      messageFilter={dropReasoningFromRequest}
+      messageFilter={requestMessages}
       enableInspector={inspectorEnabled}
     >
       <SessionProvider>

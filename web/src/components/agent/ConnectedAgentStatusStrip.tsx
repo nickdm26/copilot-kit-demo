@@ -76,6 +76,8 @@ function BoundStatusStrip({ agentId }: { agentId: string }) {
         }
       },
       onToolCallStartEvent: ({ event }) => {
+        // A sub-agent's own calls belong to its lane in the SubagentBoard, not to the coach's steps.
+        if (event.subagentRunId) return;
         args.set(event.toolCallId, { name: event.toolCallName, json: "" });
         const step = { id: event.toolCallId, label: stepLabel(event.toolCallName, null) };
         setRun((r) => ({ ...r, steps: [...r.steps, step] }));
@@ -172,6 +174,8 @@ function stepLabel(tool: string, args: unknown): string {
       return Array.isArray(a.rows) ? `Proposed ${a.rows.length} changes` : "Proposed changes";
     case TOOLS.showHowTo:
       return "Built a how-to";
+    case TOOLS.runSubagents:
+      return Array.isArray(a.tasks) ? `Ran ${a.tasks.length} sub-agents in parallel` : "Ran sub-agents in parallel";
     default:
       return tool;
   }

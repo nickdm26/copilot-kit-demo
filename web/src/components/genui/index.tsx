@@ -22,6 +22,7 @@ import { useProgramState } from "./useProgramState";
 import { computeWeekVolume } from "./weekVolume";
 import { Card } from "../ui";
 import { useHowToTool } from "../declarative";
+import { useSubagentsTool } from "../subagents";
 import { useSendUserMessage } from "../agent/useSendUserMessage";
 import { usePendingApproval } from "../agent/pendingApprovals";
 import { useSession } from "../../lib/session";
@@ -214,6 +215,9 @@ export function GenUi(): null {
 
   // showHowTo is a backend tool; this only renders its calls (declarative how-to, Task 9).
   useHowToTool();
+
+  // runSubagents is a backend tool too; this draws the live sub-agent board for each call (CONTRACTS section 11).
+  useSubagentsTool();
 
   return null;
 }
