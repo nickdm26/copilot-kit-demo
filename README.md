@@ -105,6 +105,21 @@ To record a new run:
 
 Each agent run is one trace in the Aspire dashboard, from the runtime through the agent to the model call. One chat message can start several runs, because the agent keeps going after a card or a swap answer.
 
+### Reasoning ("Thought for…")
+
+The configured OpenRouter models stream their reasoning, and the chat shows it as a collapsible **Thought for…** block above each answer. `agent/Chat/ReasoningChatClient.cs` is what makes that work: `Microsoft.Extensions.AI.OpenAI` 10.11.0 only reads `delta.reasoning_content`, while OpenRouter sends `delta.reasoning`, so the client copies the field across as `TextReasoningContent` and the AG-UI host turns it into `REASONING_*` events.
+
+Two details worth knowing before changing it:
+
+- OpenRouter sends `"content": ""` on every reasoning chunk. Left in, the AG-UI host treats it as text and closes the reasoning block, so the chat shows one block per token. The client drops empty text parts.
+- Reasoning is display-only and is **not** sent back to the agent: `MapChatRole` in AGUI.Abstractions 1.0.0 has no `reasoning` case, so replaying a thread containing one fails the next run with `Unknown chat role: reasoning`. `App.tsx` filters them out of the request with CopilotKit's `messageFilter`, which leaves the on-screen transcript alone.
+
+### CopilotKit Web Inspector
+
+Append `?inspector` to the web URL to mount CopilotKit's Web Inspector: AG-UI event stream, agent state, tool calls, and the reasoning events above. It is opt-in because its floating launcher sits above the page and swallows clicks on whatever is under it.
+
+It only appears when Vite runs with `NODE_ENV=development`, which the AppHost pins for the web resource. Without that, Aspire would pass `production` (it derives `NODE_ENV` from the AppHost's own environment, and `aspire run` starts the AppHost without a launch profile), and CopilotKit would never mount the inspector.
+
 ## Repo layout
 
 ```text
@@ -117,6 +132,10 @@ web/                Vite + React app: the trainer's screen
 shared/             Program schema and seed data (exercises, clients)
 e2e/                Playwright test of the demo script
 ```
+
+Planning and status docs live alongside this one: `PLAN.md`, `CONTRACTS.md` (the authoritative
+shapes and names), `HANDOFF.md`, `AUDIT.md`, `ORCHESTRATOR_REPORT.md`, and `SESSION_NOTES.md`
+(why reasoning, the inspector and subagents are the way they are, with the evidence).
 
 ## Troubleshooting
 

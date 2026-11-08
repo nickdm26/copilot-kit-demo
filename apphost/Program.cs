@@ -20,6 +20,11 @@ builder.AddViteApp("web", "../web") // runs the "dev" script
     .WithYarn()
     .WithEnvironment("AGENT_URL", agent.GetEndpoint("http"))
     .WithEnvironment("RUNTIME_URL", runtime.GetEndpoint("http"))
+    // Aspire sets NODE_ENV from the AppHost's own environment, and `aspire run` starts the AppHost without a launch
+    // profile, so it would be "production". Vite bakes that into the dependency bundle, which switches off React's
+    // development build and CopilotKit's Web Inspector (it requires NODE_ENV === "development"). This is a local dev
+    // host, so pin it. See CONTRACTS section 5.
+    .WithEnvironment("NODE_ENV", "development")
     .WaitFor(runtime);
 
 builder.Build().Run();

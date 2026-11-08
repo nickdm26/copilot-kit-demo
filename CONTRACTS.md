@@ -212,12 +212,17 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 | `AGENT_URL` | runtime, web | agent http endpoint, no trailing slash |
 | `RUNTIME_URL` | web | runtime http endpoint |
 | `PORT` | runtime | the port it must listen on |
+| `NODE_ENV` | web | `development`, pinned by the AppHost. Aspire derives it from the AppHost's own environment, and `aspire run` starts the AppHost without a launch profile, so it would otherwise be `production` and switch off React's dev build and CopilotKit's Web Inspector |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` etc. | all | Aspire standard |
 | `Telemetry__CaptureContent` | agent | `true` under Aspire: prompt/response text and tool arguments/results on GenAI spans. Agent default is off |
 
 **Runtime agents.** At startup the runtime fetches `${AGENT_URL}/models` and registers one `HttpAgent` per entry: agent id = `key`, url = `${AGENT_URL}/agent/${key}`. The CopilotKit `agentId` is therefore always the model key.
 
 **Browser.** `CopilotKitProvider runtimeUrl="/api/copilotkit"`. The browser only talks to its own origin. Changing the model or the client starts a new thread (fresh `threadId`) and resets the grid to `emptyProgram(clientId)`.
+
+**Reasoning.** The agent emits AG-UI `REASONING_*` events for the model's reasoning, which the chat renders as a collapsible "Thought for…" block. Reasoning messages are display-only: `messageFilter` on the provider drops them from the request body, because `MapChatRole` in AGUI.Abstractions 1.0.0 has no `reasoning` case and would fail the next run. The on-screen transcript is unaffected.
+
+**Web Inspector.** CopilotKit's Web Inspector is opt-in via `?inspector` on the web URL (`enableInspector` on the provider). It is off by default because its floating launcher intercepts clicks on the page beneath it.
 
 **Secrets.** The OpenRouter key lives only in the agent project's user secrets:
 

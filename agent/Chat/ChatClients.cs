@@ -83,10 +83,12 @@ public sealed class OpenRouterChatClientFactory(
 
     // The agent's OpenTelemetry layer finds this OpenTelemetryChatClient through GetService and doesn't add a second one,
     // so each LLM call is one "chat <model>" span. Anything between the agent and this client must forward GetService.
+    // ReasoningChatClient sits innermost so the span and the enrichment both see the reasoning content.
     private IChatClient Instrument(IChatClient chat) => chat
         .AsBuilder()
         .UseOpenTelemetry(loggerFactory, TelemetrySource, c => c.EnableSensitiveData = telemetry.Value.CaptureContent)
         .Use((inner, _) => new TelemetryEnrichingChatClient(inner, telemetry.Value.CaptureContent))
+        .Use((inner, _) => new ReasoningChatClient(inner))
         .Build();
 }
 
