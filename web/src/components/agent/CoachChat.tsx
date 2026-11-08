@@ -120,7 +120,21 @@ function BoundChat({
         messageView={MessageViewWithEmptyState as unknown as typeof CopilotChatMessageView}
         input={{
           sendButton: SendButton,
-          children: ({ textArea, sendButton }) => (
+          startTranscribeButton: MicButton,
+          cancelTranscribeButton: CancelRecordingButton,
+          finishTranscribeButton: FinishRecordingButton,
+          // CopilotKit only passes onStartTranscribe when the runtime has a transcription service and the browser has
+          // MediaRecorder, so the mic button hides itself otherwise. While recording, the waveform replaces the text box.
+          children: ({
+            mode,
+            textArea,
+            audioRecorder,
+            sendButton,
+            onStartTranscribe,
+            startTranscribeButton,
+            cancelTranscribeButton,
+            finishTranscribeButton,
+          }) => (
             <div className="pointer-events-auto flex flex-col gap-2.5 border-t border-border bg-surface px-3.5 py-3">
               {hasMessages ? <ConnectedSuggestionChips /> : null}
               <div className="flex items-end gap-2">
@@ -131,9 +145,28 @@ function BoundChat({
                     "[&_textarea]:block [&_textarea]:min-h-[42px] [&_textarea]:py-2.5 [&_textarea]:px-0 [&_textarea]:text-sm [&_textarea]:leading-5 [&_textarea]:outline-none [&_textarea]:placeholder:text-ink-muted",
                   )}
                 >
-                  {textArea}
+                  {mode === "transcribe" ? (
+                    // The waveform canvas draws in currentColor.
+                    <div className="flex min-h-[42px] items-center text-accent [&>div]:px-0 [&>div]:py-2">{audioRecorder}</div>
+                  ) : mode === "processing" ? (
+                    <p role="status" className="flex min-h-[42px] items-center text-sm text-ink-muted">
+                      Transcribing...
+                    </p>
+                  ) : (
+                    textArea
+                  )}
                 </div>
-                {sendButton}
+                {mode === "transcribe" ? (
+                  <>
+                    {cancelTranscribeButton}
+                    {finishTranscribeButton}
+                  </>
+                ) : (
+                  <>
+                    {onStartTranscribe && mode === "input" ? startTranscribeButton : null}
+                    {sendButton}
+                  </>
+                )}
               </div>
             </div>
           ),
@@ -150,6 +183,60 @@ function MessageViewWithEmptyState(props: CopilotChatMessageViewProps) {
   const empty = useContext(EmptyStateContext);
   if ((props.messages?.length ?? 0) === 0 && !props.isRunning) return <>{empty}</>;
   return <CopilotChatMessageView {...props} />;
+}
+
+const iconButton = cx(
+  "flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors",
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+  "disabled:cursor-not-allowed disabled:opacity-45",
+);
+const outlineButton = cx(iconButton, "border-border bg-surface text-ink hover:bg-bg");
+
+function Icon({ d }: { d: string }) {
+  return (
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
+
+/** Starts recording a voice message (CopilotKit records it and transcribes it into the text box). */
+function MicButton({ className, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      aria-label="Dictate a message"
+      title="Dictate a message"
+      data-testid={TEST_IDS.voiceInput}
+      {...props}
+      className={cx(outlineButton, className)}
+    >
+      <Icon d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" />
+    </button>
+  );
+}
+
+function CancelRecordingButton({ className, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button type="button" aria-label="Discard recording" title="Discard recording" {...props} className={cx(outlineButton, className)}>
+      <Icon d="M6 6l12 12M18 6L6 18" />
+    </button>
+  );
+}
+
+/** Stops recording and transcribes it into the text box (the trainer still presses send). */
+function FinishRecordingButton({ className, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      aria-label="Stop and transcribe"
+      title="Stop and transcribe"
+      {...props}
+      className={cx(iconButton, "border-accent bg-accent text-on-fill hover:bg-accent-strong", className)}
+    >
+      <Icon d="M5 12l5 5L20 7" />
+    </button>
+  );
 }
 
 /** Accent square send button with ink arrow (the chat passes a stop icon as children while a run can be stopped). */
