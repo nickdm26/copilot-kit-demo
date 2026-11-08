@@ -1,4 +1,5 @@
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
+using Microsoft.Extensions.Http.Resilience;
 using PtCoach.Agent.Agents;
 using PtCoach.Agent.Chat;
 using PtCoach.Agent.Models;
@@ -46,6 +47,20 @@ builder.Services.AddSingleton<CoachAgentBuilder>();
 builder.Services.AddProgramState(); // Lane F: updateProgram + shared program state (CONTRACTS section 9, Plan A)
 builder.Services.Configure<TelemetryOptions>(builder.Configuration.GetSection(TelemetryOptions.SectionName));
 builder.Services.AddHowTo(); // Task 9: showHowTo, the declarative how-to tool
+builder.Services.Configure<TranscriptionOptions>(builder.Configuration.GetSection(TranscriptionOptions.SectionName));
+// The chat mic button (POST /transcribe). The service-defaults handler would retry this paid POST and give each try
+// only 10s; OpenRouter allows 60s per transcription, so no retries and room for that.
+#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is marked experimental in Microsoft.Extensions.Http.Resilience 10.11
+builder.Services.AddHttpClient(TranscriptionEndpoint.HttpClientName)
+    .RemoveAllResilienceHandlers()
+#pragma warning restore EXTEXP0001
+    .AddStandardResilienceHandler(o =>
+    {
+        o.Retry.DisableForUnsafeHttpMethods();
+        o.AttemptTimeout.Timeout = TimeSpan.FromSeconds(75);
+        o.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(90);
+        o.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(150); // must be at least twice the attempt timeout
+    });
 
 var app = builder.Build();
 app.MapDefaultEndpoints();
@@ -55,6 +70,9 @@ app.MapGet("/models", (ModelsOptions m) =>
     Results.Json(
         m.Items.Select(i => new ModelOption(i.Key, i.Config.Label, i.Config.ModelId)).ToList(),
         ContractJson.Options));
+
+// The runtime's CopilotKit transcription service forwards the mic recording here; OpenRouter does the speech-to-text.
+app.MapPost("/transcribe", TranscriptionEndpoint.Handle);
 
 var coach = app.Services.GetRequiredService<CoachAgentBuilder>();
 foreach (var (key, _) in models.Items)

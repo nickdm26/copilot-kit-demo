@@ -200,6 +200,7 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 | --- | --- | --- |
 | agent | `POST /agent/{modelKey}` | AG-UI endpoint via `MapAGUIServer`, one per key in `Models` |
 | agent | `GET /models` | `[{ key, label, modelId }]` in config order. Never secrets |
+| agent | `POST /transcribe` | Chat mic button. Multipart `audio` file in; `{ text }` out, or `{ error }` with 400/401/429/502/503. Calls OpenRouter `/audio/transcriptions` with `Transcription:modelId` |
 | agent | `GET /health`, `GET /alive` | Aspire service defaults |
 | runtime | `POST /api/copilotkit` (and its sub-routes) | CopilotKit runtime, `@copilotkit/runtime/v2/express` |
 | web | `/api/copilotkit` | Vite dev proxy → `${RUNTIME_URL}/api/copilotkit` |
@@ -221,6 +222,8 @@ The web app imports seed files read-only through a Vite alias `@seed` → `../sh
 **Browser.** `CopilotKitProvider runtimeUrl="/api/copilotkit"`. The browser only talks to its own origin. Changing the model or the client starts a new thread (fresh `threadId`) and resets the grid to `emptyProgram(clientId)`.
 
 **Reasoning.** The agent emits AG-UI `REASONING_*` events for the model's reasoning, which the chat renders as a collapsible "Thought for…" block. Reasoning messages are display-only: `messageFilter` on the provider drops them from the request body, because `MapChatRole` in AGUI.Abstractions 1.0.0 has no `reasoning` case and would fail the next run. The on-screen transcript is unaffected.
+
+**Voice input.** The runtime passes CopilotKit a `transcriptionService` that forwards the recording to the agent's `POST /transcribe`, so the runtime reports `audioFileTranscriptionEnabled` and `CopilotChat` shows the mic button (when the browser has `MediaRecorder`). CopilotKit posts the recording to `/api/copilotkit/transcribe` and puts the text in the input box; the trainer still presses send. The model is `Transcription:modelId` in `agent/appsettings.json`: `openai/whisper-large-v3`, chosen by Nick. It uses the same `OpenRouter:ApiKey`.
 
 **Web Inspector.** CopilotKit's Web Inspector is opt-in via `?inspector` on the web URL (`enableInspector` on the provider). It is off by default because its floating launcher intercepts clicks on the page beneath it.
 
@@ -273,6 +276,7 @@ Playwright depends on these `data-testid` values (`TEST_IDS` in `contracts.ts`).
 | `swap-approval` | `SwapApproval` root | `data-state` = `streaming`/`pending`/`approved`/`rejected` |
 | `swap-approve`, `swap-reject` | its two buttons | |
 | `program-diff-card` | `ProgramDiffCard` root | `data-state` = `pending`/`approved`/`rejected` |
+| `voice-input` | chat mic button (only when transcription is available) | |
 
 ---
 

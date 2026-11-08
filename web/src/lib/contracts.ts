@@ -390,4 +390,5 @@ export const TEST_IDS = {
   swapApprove: "swap-approve",
   swapReject: "swap-reject",
   programDiffCard: "program-diff-card",
+  voiceInput: "voice-input",
 } as const;
